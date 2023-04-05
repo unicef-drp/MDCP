@@ -11,15 +11,18 @@ of any country or territory or the delimitation of any frontiers."
 prospect_countries <- c('EGY', 'ETH', 'IRQ', 'JOR', 'KEN', 'LBN', 'SDN', 'UGA')
 blueprint_countries <- c("BGD", "CMR", "ECU", "ETH", "HND", "IDN", "IRQ", "KEN", "LBN", "LBY", "RWA")
 lostgen_countries <- c("SYR","TUR","LBN","JOR","IRQ","EGY")
-# all_ctry <- intersect(wpp.pop %>% filter(area.id < 900, year == 2019,poptotal.thsd >90) %>% pull(iso3),
-#                       mig.stock.orig.dest %>% filter(year == 2019, dest.area.id<900) %>% distinct(dest.iso3) %>% pull())
+# all_ctry <- intersect(wpp.pop |> filter(area.id < 900, year == 2019,poptotal.thsd >90) |> pull(iso3),
+#                       mig.stock.orig.dest |> filter(year == 2019, dest.area.id<900) |> distinct(dest.iso3) |> pull())
 
+#Country and region data
 load('data/all_ctry.Rdata')
 load('data/location.Rdata')
 load('data/UNSD_M49_Aug2019.Rdata')
 
 
-countries <- wpp.unicef.all %>% filter(iso3 %in% all_ctry & !iso3 %in% c('TWN'))  %>% left_join(select(m49,iso3,m49_sub = subregion)) %>% mutate(m49_sub = replace_na(m49_sub,'Unknown'))
+countries <- wpp.unicef.all |> filter(iso3 %in% all_ctry & !iso3 %in% c('TWN'))  |>
+  left_join(select(m49,iso3,m49_sub = subregion)) |>
+  mutate(m49_sub = replace_na(m49_sub,'Unknown'))
 choices <- countries$area
 
 
@@ -90,9 +93,6 @@ server <-  function(input, output,session) {
   })
   
   
-  
-  
-  
   output$mymap1 <- leaflet::renderLeaflet({
     req(ctry())
     
@@ -101,20 +101,20 @@ server <-  function(input, output,session) {
     
     
     
-    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) %>% mutate(type = '<em>Prospects</em> Country: ')
+    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = '<em>Prospects</em> Country: ')
                                             , joinCode = "ISO3"
                                             , nameJoinColumn = "ISO")
     
     
-    map.ctry <- worldmap_spdf %>% subset( ISO3 ==ctry())
+    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
     label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-    map.other.ctry <- worldmap_spdf %>% subset(is.prospect==1 & ISO3 !=ctry())
-    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) %>% lapply(htmltools::HTML)
+    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
     
-    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) %>%
-      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") %>%
-      setMaxBounds(-180,-55,180,75) %>%
-      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) %>%
+    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+      setMaxBounds(-180,-55,180,75) |>
+      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
       addPolygons(data = map.ctry ,
                   fillColor = '#0083CF',
                   weight = 1,
@@ -127,7 +127,7 @@ server <-  function(input, output,session) {
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
                     direction = "auto"),
-                  layerId = ~ISO3) %>%
+                  layerId = ~ISO3) |>
       addPolygons(data = map.other.ctry,
                   fillColor = '#69DBFF',
                   weight = 1,
@@ -162,20 +162,20 @@ server <-  function(input, output,session) {
     
     
     
-    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) %>% mutate(type = '<em>Blueprint</em> Country: ')
+    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = '<em>Blueprint</em> Country: ')
                                             , joinCode = "ISO3"
                                             , nameJoinColumn = "ISO")
     
     
-    map.ctry <- worldmap_spdf %>% subset( ISO3 ==ctry())
+    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
     label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-    map.other.ctry <- worldmap_spdf %>% subset(is.prospect==1 & ISO3 !=ctry())
-    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) %>% lapply(htmltools::HTML)
+    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
     
-    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) %>%
-      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") %>%
-      setMaxBounds(-180,-55,180,75) %>%
-      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) %>%
+    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+      setMaxBounds(-180,-55,180,75) |>
+      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
       addPolygons(data = map.ctry ,
                   fillColor = '#0083CF',
                   weight = 1,
@@ -188,7 +188,7 @@ server <-  function(input, output,session) {
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
                     direction = "auto"),
-                  layerId = ~ISO3) %>%
+                  layerId = ~ISO3) |>
       addPolygons(data = map.other.ctry,
                   fillColor = '#69DBFF',
                   weight = 1,
@@ -222,20 +222,20 @@ server <-  function(input, output,session) {
     
     
     
-    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) %>% mutate(type = '<em>No Lost Generation</em> Country: ')
+    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = '<em>No Lost Generation</em> Country: ')
                                             , joinCode = "ISO3"
                                             , nameJoinColumn = "ISO")
     
     
-    map.ctry <- worldmap_spdf %>% subset( ISO3 ==ctry())
+    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
     label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-    map.other.ctry <- worldmap_spdf %>% subset(is.prospect==1 & ISO3 !=ctry())
-    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) %>% lapply(htmltools::HTML)
+    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
     
-    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) %>%
-      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") %>%
-      setMaxBounds(-180,-55,180,75) %>%
-      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) %>%
+    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+      setMaxBounds(-180,-55,180,75) |>
+      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
       addPolygons(data = map.ctry ,
                   fillColor = '#0083CF',
                   weight = 1,
@@ -248,7 +248,7 @@ server <-  function(input, output,session) {
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
                     direction = "auto"),
-                  layerId = ~ISO3) %>%
+                  layerId = ~ISO3) |>
       addPolygons(data = map.other.ctry,
                   fillColor = '#69DBFF',
                   weight = 1,
@@ -278,24 +278,24 @@ server <-  function(input, output,session) {
     req(ctry())
     
     
-    countries_selected <- countries %>% pull(iso3)
+    countries_selected <- countries |> pull(iso3)
     
     
     
-    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) %>% mutate(type = 'Country: ')
+    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = 'Country: ')
                                             , joinCode = "ISO3"
                                             , nameJoinColumn = "ISO")
     
     if(!ctry() %in% c("MYT", "REU", "GLP", "MTQ", "CHI")){
-      map.ctry <- worldmap_spdf %>% subset( ISO3 ==ctry())
+      map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
       label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-      map.other.ctry <- worldmap_spdf %>% subset(is.prospect==1 & ISO3 !=ctry())
-      label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) %>% lapply(htmltools::HTML)
+      map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+      label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
       
-      mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) %>%
-        addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") %>%
-        setMaxBounds(-180,-55,180,75) %>%
-        setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) %>%
+      mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+        addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+        setMaxBounds(-180,-55,180,75) |>
+        setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
         addPolygons(data = map.ctry ,
                     fillColor = '#0083CF',
                     weight = 1,
@@ -308,7 +308,7 @@ server <-  function(input, output,session) {
                       style = list("font-weight" = "normal", padding = "3px 8px"),
                       textsize = "15px",
                       direction = "auto"),
-                    layerId = ~ISO3) %>%
+                    layerId = ~ISO3) |>
         addPolygons(data = map.other.ctry,
                     fillColor = '#69DBFF',
                     weight = 1,
@@ -329,12 +329,12 @@ server <-  function(input, output,session) {
                       direction = "auto"),
                     layerId = ~ISO3)
     } else {
-      map.other.ctry <- worldmap_spdf %>% subset(is.prospect==1 )
-      label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) %>% lapply(htmltools::HTML)
+      map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 )
+      label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
       
-      mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) %>%
-        addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") %>%
-        setMaxBounds(-180,-55,180,75) %>%
+      mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+        addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+        setMaxBounds(-180,-55,180,75) |>
         addPolygons(data = map.other.ctry,
                     fillColor = '#69DBFF',
                     weight = 1,
@@ -415,7 +415,7 @@ server <-  function(input, output,session) {
   observeEvent(input$mymap4_shape_click$id, {
     ctry(input$mymap4_shape_click$id)
     
-    updateSelectInput(session,'world_country',selected = countries %>% filter(iso3 == input$mymap4_shape_click$id) %>% select(area) %>% pull())
+    updateSelectInput(session,'world_country',selected = countries |> filter(iso3 == input$mymap4_shape_click$id) |> select(area) |> pull())
     
     output$ctry_profile <- renderUI(NULL)
     
@@ -439,7 +439,7 @@ server <-  function(input, output,session) {
   
   observeEvent(input$world_country,{
     need(input$world_country, 'Please select a country!')
-    iso3 <- wpp.unicef.all %>% filter(area == input$world_country) %>% pull(iso3)
+    iso3 <- wpp.unicef.all |> filter(area == input$world_country) |> pull(iso3)
     ctry(iso3)
     output$ctry_profile <- renderUI(NULL)
     
