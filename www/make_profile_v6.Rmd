@@ -132,7 +132,6 @@ pop.df <- wpp.age.group |> filter((year %in% c(2000,2022,2050) & iso3 == country
 
 -------  
 
-  
 ### International migration statistics
 **International migrant stock**: For statistical purposes, the international migrant stock is defined as the foreign-born population residing in the country at a specific reference day (here 1 July of the reference year). If information on country of birth is not available, citizenship is used as criterion. Note, that the reason for changing the residence country or legal status is not a criterion in this definition. Thus, the international migrant stock explicitly includes refugees and irregular migrants. While in most countries refugees represent only a small share of the total migrant stock, in some countries the majority of the international ‘migrants’ may have refugee status. 
 <br/>
@@ -444,7 +443,7 @@ fig5 <- ggplot(data=data5,aes(x = age.group.label, y = pct)) +
 
 fig5
 ```  
-  
+<font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2020. International Migrant Stock 2020.</em></font>
   
 #### International migration corridors
 The migrant stock can be analyzed by country of origin and country of destination. The chart below shows the major migration corridors from and to `r country.wpp.name`. The light blue arrows show where emigrants from `r country.wpp.name` settled and the dark blue arrows show where immigrants in `r country.wpp.name` came from. The width of the arrow represents the number of migrants. Below the charts the top 3 migration corridors for emigration from `r country.wpp.name` and immigration into `r country.wpp.name` are shown.
@@ -521,7 +520,7 @@ immi.df
   
 <center>
 
-<font size = 3> **International immigration and emigration corridors related to `r country.wpp.name`, 2020 (migrant stock in thousands)** </font>  
+<font size = 3> **International immigration and emigration corridors related to `r country.wpp.name`, 2020 (migrant stock in thousands)** </em></font>  
 
 
 </center>  
@@ -585,7 +584,7 @@ circos.trackPlotRegion(
 ```  
   
 
-<font size = 1>***Source:*** _United Nations, Department of Economic and Social Affairs, Population Division, Trends in International Migrant Stock: Migrants by Age and Sex, United Nations, New York, 2021._</font> 
+<font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2021. Trends in International Migrant Stock: Migrants by Age and Sex.</em></font> 
 
 
 ### Missing Migrants 
@@ -627,7 +626,7 @@ if(nrow(dt_mmg_ctr) == 0){
 
 ```
 
-<font size = 1>***Source:*** _IOM, Missing Migrants Protect, https://missingmigrants.iom.int/downloads, accessed Feb.2022_</font>
+<font size = 1><em>***Source:*** IOM, 2022. Missing Migrants Protect, https://missingmigrants.iom.int/downloads. Accessed February 2022.</em></font>
 
 
 ### Refugees 
@@ -660,7 +659,7 @@ kable(dt_disp_2019[c(1:6),], align = c('l',rep('r',3))) |> kable_classic(full_wi
 ```
 
 
-`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 5> Palestine Refugees* </font>   "}`
+`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 5> Palestine Refugees* </em></font>   "}`
 ```{r}
 if(country %in% c('JOR','SYR','LBN','PSE')){
   unrwa.ref.world <- df.unrwa.0to17.2020 |> filter(year == 2020,name == 'total') |> select(pop) |> pull()/1000
@@ -691,7 +690,7 @@ if(country %in% c('JOR','SYR','LBN','PSE')){
 
 ```
 
-`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1> _* Palestine refugees registered with UNRWA_ </font>  "}`
+`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> _* Palestine refugees registered with UNRWA_ </em></font>  "}`
 
 
 ```{r, fig.align = "center", warning=FALSE}
@@ -742,10 +741,10 @@ fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = col
 fig_enrlmnt_cmpr
 ```
 
-<font size = 1>***Source:***</font>
-<font size = 1>_UNHCR, Global Trends: Forced Displacement in 2020, UNHCR, Geneva, 2021._</font>
-<font size = 1>_UNHCR, Coming Together For Refugee Education. Education Report 2020, UNHCR, Geneva, Sep 2020._</font>
-<font size = 1>_UNESCO Institute for Statistics, UIS database, http://data.uis.unesco.org, 2020_</font>
+<font size = 1><em>***Source:***</em></font>
+<font size = 1><em>UNHCR, 2021. Global Trends: Forced Displacement in 2020.</em></font>
+<font size = 1><em>UNHCR, 2020. Coming Together For Refugee Education. Education Report 2020.</em></font>
+<font size = 1><em>UNESCO, Institute for Statistics, 2020. UIS database, http://data.uis.unesco.org.</em></font>
 
 ### UNHCR Operational data (Prospect countries only)
 The Operational Data Portal (ODP) was created in 2011 to enable UNHCR’s institutional responsibility to provide an information and data sharing platform to facilitate coordination of refugee emergencies. This section is generated from UNHCR's ODP and contains the latest refugee data.  
@@ -783,7 +782,7 @@ ggplot(dt_unhcr_op_plt,aes(x = area |> reorder(population),y = population,fill =
 }
 ```
 
-<font size = 1>***Source:*** _UNCHR, Operational Data Portal, https://data2.unhcr.org/en/countries/, accessed 2022_</font>
+<font size = 1><em>***Source:*** UNCHR, 2022. Operational Data Portal, https://data2.unhcr.org/en/countries/. Accessed 2022.</em></font>
 
 ### Digital connectivity among refugees
 
@@ -809,13 +808,12 @@ kable(dt10, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
 }
 
 ```
-<font size = 1>***Source:*** _UNCHR, Connecting Refugees, https://www.unhcr.org/publications/operations/5770d43c4/connecting-refugees.html, Geneva, 2016._</font>
+<font size = 1><em>***Source:*** UNCHR, 2016. Connecting Refugees, https://www.unhcr.org/publications/operations/5770d43c4/connecting-refugees.html.</em></font>
 
 ### Internally displaced persons
 **Internally Displaced Persons (IDPs)** are “Persons or groups of persons who have been forced or obliged to flee or to leave their homes or places of habitual residence, in particular as a result of or in order to avoid the effects of armed conflict, situations of generalized violence, violations of human rights or natural or human-made disasters, and who have not crossed an internationally recognized State border” ([UN Guiding Principles on Internal Displacement](https://www.unhcr.org/43ce1cff2.pdf)).
 
 The [Internal Displacement Monitoring Centre (IDMC)](https://www.internal-displacement.org/) estimates the total number of IDPs at the end of the year by verifying and triangulating data from variety of sources such as national and international organizations, governments, media reports, and other publicly available sources.
-
 
 <br/>
 
@@ -868,6 +866,7 @@ if(nrow(data.idp) == 0){
 }
 
 ```
+<font size = 1><em>***Source:*** IDMC, 2021. Global Internal Displacement Database.</em></font>
 
 
 ```{r,fig.align = "center",out.width="100%"}
@@ -894,8 +893,7 @@ if(nrow(data.idp) == 0){
 }
 
 ```
-<font size = 1>***Source:*** _IDMC, Global Internal Displacement Database, 2021._</font>
-
+<font size = 1><em>***Source:*** IDMC, 2021. Global Internal Displacement Database.</em></font>
 
 
 ```{r,fig.align = "center",eval=F}
@@ -950,7 +948,7 @@ fig3
 
 
 ### IOM DTM operation data on internal displacements (Prospect countries only)
-<font size = 1>_The Displacement Tracking Matrix (DTM) gathers and analyzes data to disseminate critical multilayered information on the mobility, vulnerabilities, and needs of displaced and mobile populations that enables decision makers and responders to provide these populations with better context specific assistance. This section is generated from IOM's DTM and contains the latest internal displacement data available. _</font>
+<font size = 1><em>_The Displacement Tracking Matrix (DTM) gathers and analyzes data to disseminate critical multilayered information on the mobility, vulnerabilities, and needs of displaced and mobile populations that enables decision makers and responders to provide these populations with better context specific assistance. This section is generated from IOM's DTM and contains the latest internal displacement data available. _</em></font>
 
 ```{r,fig.align = "center",out.width="100%", eval=FALSE}
 if(country.wpp.name %in% prospect_country){
@@ -989,8 +987,6 @@ if(country.wpp.name %in% prospect_country){
 ```
 
 
-
-
 ### Remittances 
 Foreign remittance is a transfer of money from a foreign worker to their family or other individuals in their home countries. In many countries, remittance constitutes a significant portion of a nation's GDP.
 
@@ -1003,7 +999,7 @@ kable(dt_disp_2021[10:11,], align = c('l',rep('r',3))) |> kable_classic(full_wid
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```
 
-<font size = 1>***Source:*** _World Bank, WB database, https://data.worldbank.org/, 2021_</font>
+<font size = 1><em>***Source:*** World Bank, 2021. WB database, https://data.worldbank.org/.</em></font>
 
 
 -------
@@ -1068,12 +1064,11 @@ fig_chart1 <-ggplot(data_chart1, aes(x = year,y = population/1000, fill = `age g
         plot.title=element_text(size=14, face="bold"),
         panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
-
 fig_chart1
 
 ```
 
-<font size = 1>***Source:*** _United Nations, Department of Economic and Social Affairs, Population Division, World Population Prospects: The 2019 Revision, United Nations, New York, 2019._</font>
+<font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2019. World Population Prospects: The 2019 Revision.</em></font>
 
 #### Share of population
 ```{r}
@@ -1190,7 +1185,7 @@ fig_chart2
 fig_chart3
 ```
 
-<font size = 1>***Source:*** _United Nations, Department of Economic and Social Affairs, Population Division, World Population Prospects: The 2019 Revision, United Nations, New York, 2019._</font>
+<font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2019. World Population Prospects: The 2019 Revision.</em></font>
 
 #### Demographics
 
@@ -1256,6 +1251,7 @@ fig_chart5 <- ggplot(data_chart5, aes(x = year,y = births.thsd))+
        subtitle = paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
        fill = NULL)+
   blank_theme+
+  ylim(0,NA)+
   theme(legend.position="bottom",
         legend.direction="vertical",
         plot.title=element_text(size=14, face="bold"),
@@ -1265,7 +1261,7 @@ fig_chart4
 fig_chart5
 ```
 
-<font size = 1>***Source:*** _United Nations, Department of Economic and Social Affairs, Population Division, 2022 Revision of World Population Prospects_</font>
+<font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2022. 2022 Revision of World Population Prospects.</em></font>
 
 ### Child mortality indicators
 
@@ -1332,7 +1328,7 @@ fig_igme
 }
 ```
 
-<font size = 1>***Source:*** _United Nations, The United Nations Inter-agency Group for Child Mortality Estimation (UN IGME) data base, https://childmortality.org/, 2022._</font>
+<font size = 1><em>***Source:*** United Nations Inter-agency Group for Child Mortality Estimation (UN IGME) 2022. UN IGME database, https://childmortality.org/.</em></font>
 
 ### Child protection indicators
 ```{r}
@@ -1377,7 +1373,7 @@ fig_chart9
 }
 ```
 
-<font size = 1>***Source:*** _UNICEF Data Warehouse, https://data.unicef.org/, 2022_</font>
+<font size = 1><em>***Source:*** UNICEF, 2022. Data Warehouse, https://data.unicef.org/.</em></font>
 
 ### Youth unemployment rate
 
@@ -1447,7 +1443,7 @@ out <- tryCatch({  ilo.df <- ilo.unemploy.wpp |>
 
 ```
 
-***Note*** _From ILO: The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data._
+***Note*** From ILO: The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data.
 
 
 ```{r,fig.align = "center"}
@@ -1478,7 +1474,7 @@ if( flag_ilo){
 ```
 
 
-<font size = 1>***Source:*** _International Labour Organization, ILOSTAT database, https://ilostat.ilo.org/data, 2022_</font>
+<font size = 1><em>***Source:*** International Labour Organization, 2022. ILOSTAT database, https://ilostat.ilo.org/data.</em></font>
 
 ### Economic indicators
 
@@ -1538,7 +1534,6 @@ out <- tryCatch({
 out
 
 
-
 ```
 
 ```{r, message=F,warning=F,out.width="50%"}
@@ -1581,7 +1576,7 @@ print(fig_chart8)
 }
 ```
 
-<font size = 1>***Source:*** _World Bank, WB database, https://data.worldbank.org/, 2022_</font>
+<font size = 1><em>***Source:*** World Bank, 2022. World Bank database, https://data.worldbank.org.</em></font>
 
 ### Education indicators
 
@@ -1636,11 +1631,4 @@ kable(dt7, align = c('l','r','r','r'))  |> kable_classic(full_width = T) |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```
 
-<font size = 1>***Source:*** _UNESCO Institute for Statistics, UIS database, http://data.uis.unesco.org, 2022_</font>
-
-## Further reading and reports 
-1. [UNHCR -- The Operational Data Portal (ODP)](https://data.unhcr.org/en/search?type%5B%5D=document&global_filter%5Bdoc_type%5D%5B%5D=7&maps=1)  
-2. [IOM -- The Displacement Tracking Matrix (DTM)](https://dtm.iom.int/)  
-3. [OCHA -- The Humanitarian Data Exchange (HDX)](https://data.humdata.org/)  
-4. [UNICEF -- UNICEF Kenya](https://www.unicef.org/kenya/)
-
+<font size = 1><em>***Source:*** UNESCO, Institute for Statistics, 2022. UIS database, http://data.uis.unesco.org.</em></font>
