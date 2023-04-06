@@ -380,7 +380,8 @@ fig2 <- ggplot(data2,aes(x = as.factor(year), y = population, fill = pop.type, l
        title = "Trend in migrant stock",
        subtitle = paste0(name_of_country,' 1990-2020'),
        fill = NULL)+
-  blank_theme
+  blank_theme +
+  theme(panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 fig2
 
@@ -617,8 +618,8 @@ if(nrow(dt_mmg_ctr) == 0){
           legend.text = element_text(size=8), 
           panel.border = element_blank(),
           panel.grid=element_blank(),
-          plot.title=element_text(size=14, face="bold")
-    )+
+          plot.title=element_text(size=14, face="bold"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))+
     guides(fill=guide_legend(ncol = 1))
 
   fig.mmg
@@ -723,7 +724,7 @@ data_enrlmnt_cmpr <- mutate(data_enrlmnt_cmpr,
 
 fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = color, label = paste0(round(rate,1),"%")))+
   geom_bar(stat = 'identity',position = 'dodge', alpha = 0.7)+
-  geom_text(size = 3, position = position_dodge(width = 1),vjust = 0)+
+  geom_text(size = 4, position = position_dodge(width = 1),vjust = -0.5)+
   blank_theme +
   labs(title = 'School enrollment rates of refugees and national population by education level',
        subtitle = paste0(name_of_country,', latest data available' ),
@@ -810,8 +811,8 @@ kable(dt10, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
 ```
 <font size = 1>***Source:*** _UNCHR, Connecting Refugees, https://www.unhcr.org/publications/operations/5770d43c4/connecting-refugees.html, Geneva, 2016._</font>
 
-### Internally displaced persons (IDPs) 
-**Internally Displaced Persons** are “Persons or groups of persons who have been forced or obliged to flee or to leave their homes or places of habitual residence, in particular as a result of or in order to avoid the effects of armed conflict, situations of generalized violence, violations of human rights or natural or human-made disasters, and who have not crossed an internationally recognized State border” ([UN Guiding Principles on Internal Displacement](https://www.unhcr.org/43ce1cff2.pdf)).
+### Internally displaced persons
+**Internally Displaced Persons (IDPs)** are “Persons or groups of persons who have been forced or obliged to flee or to leave their homes or places of habitual residence, in particular as a result of or in order to avoid the effects of armed conflict, situations of generalized violence, violations of human rights or natural or human-made disasters, and who have not crossed an internationally recognized State border” ([UN Guiding Principles on Internal Displacement](https://www.unhcr.org/43ce1cff2.pdf)).
 
 The [Internal Displacement Monitoring Centre (IDMC)](https://www.internal-displacement.org/) estimates the total number of IDPs at the end of the year by verifying and triangulating data from variety of sources such as national and international organizations, governments, media reports, and other publicly available sources.
 
@@ -824,7 +825,6 @@ kable(dt_idp_2021[1:6,],  align = c('l',rep('r',3)) ) |> kable_classic(full_widt
   row_spec(1:6)|>
   row_spec(1, extra_latex_after = "\\arrayrulecolor{white}") |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
-
 ```
 
 
@@ -855,7 +855,7 @@ if(nrow(data.idp) == 0){
     scale_color_manual(name = NULL, labels = c('Conflict-related','Disaster-related'),values = c(unicef_colors[1],unicef_colors[2]))+
     labs(
       title = "Number of internally displaced persons and new displacements",
-      subtitle = paste0("by cause of displacement, ", country.wpp.name,", 2021"),
+      subtitle = paste0(country.wpp.name,", 2021"),
       fill = NULL)+
     theme(axis.line=element_blank(),
           axis.text.y=element_blank(),
@@ -877,13 +877,13 @@ data.adet <- idmc.disaster.2021 |> filter(iso3 == country) |> mutate(start.date 
 if(nrow(data.idp) == 0){
   print(paste0(''))
 }else{
-  fig.adet <-  ggplot(data = data.adet, aes(x = start.date, y = idp.dis.new, size = idp.dis.new, color = hazard.cat)) + geom_point() +
-    scale_color_manual(name = NULL, labels = c('Geophysical','Weather-related'),values = c(unicef_colors_bin[2],unicef_colors_bin[1]))+
-    labs(
-      title = "Annual disaster events timeline",
-      subtitle = paste0("by cause of displacement, ",country.wpp.name,", 2008-2021"),
-      color = NULL,
-      y = 'Displaced',x = NULL)+
+  fig.adet <-  ggplot(data = data.adet, aes(x = start.date, y = idp.dis.new, size = idp.dis.new, color = hazard.cat)) +
+    geom_point() +
+    scale_color_manual(name = NULL, labels = c('Geophysical','Weather-related'),values = unicef_colors)+
+    labs(title = "Number of IDPs from disaster events by hazard category",
+         subtitle = paste0(country.wpp.name,", 2008-2021"),
+         color = NULL,
+         y = 'Persons displaced',x = NULL)+
     scale_y_continuous(labels = addUnits)+
     scale_x_date(breaks = as.Date(c('2008-01-01','2011-01-01','2014-01-01','2017-01-01','2020-01-01')))+
     theme_minimal()+
@@ -894,6 +894,8 @@ if(nrow(data.idp) == 0){
 }
 
 ```
+<font size = 1>***Source:*** _IDMC, Global Internal Displacement Database, 2021._</font>
+
 
 
 ```{r,fig.align = "center",eval=F}
@@ -942,13 +944,9 @@ if(data3 |> distinct(pop.type) |> nrow() == 2){
   theme(axis.text.x = element_text(angle = 15))
 }
 
-
-
 fig3
 ```
 
-
-<font size = 1>***Source:*** _UNICEF analysis based on IDMC, Global Internal Displacement Database, 2021._</font>
 
 
 ### IOM DTM operation data on internal displacements (Prospect countries only)
@@ -1059,14 +1057,16 @@ fig_chart1 <-ggplot(data_chart1, aes(x = year,y = population/1000, fill = `age g
   scale_fill_manual(name = NULL, values = c(unicef_colors[9], unicef_colors[10], unicef_colors_bin[1], unicef_colors_bin[2]))+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
   scale_alpha_discrete(name = NULL,range = c(1,0.3))+
-  labs(
-    y = 'Population (million)',
-    x = 'Year',
-    title = "Population by age group",
-    subtitle = paste0(name_of_country, ", ", yr_bg1,"-",yr_ed1),
-    fill = NULL)+
+  labs(y = 'Population (million)',
+       x = 'Year',
+       title = "Population by age group",
+       subtitle = paste0(name_of_country, ", ", yr_bg1,"-",yr_ed1),
+       fill = NULL)+
   blank_theme+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
+  theme(legend.position="bottom",
+        legend.direction="vertical",
+        plot.title=element_text(size=14, face="bold"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 
 fig_chart1
@@ -1118,14 +1118,16 @@ fig_chart2 <-ggplot(data_chart2, aes(x = year,y = population, fill = `age group`
   scale_fill_manual(name = NULL, values = c(unicef_colors[9], unicef_colors[10], unicef_colors_bin[1], unicef_colors_bin[2]))+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
   scale_alpha_discrete(name = NULL,range = c(1,0.7))+
-  labs(
-    y = 'Share (%)',
-    x = 'Year',
-    title = "Share of population by age group",
-    subtitle = paste0(name_of_country, ", ", yr_bg1,"-",yr_ed1),
-    fill = NULL)+
+  labs(y = 'Share (%)',
+       x = 'Year',
+       title = "Share of population by age group",
+       subtitle = paste0(name_of_country, ", ", yr_bg1,"-",yr_ed1),
+       fill = NULL)+
   blank_theme+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
+  theme(legend.position="bottom",
+        legend.direction="vertical",
+        plot.title=element_text(size=14, face="bold"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 #Age pyramids figure
 
@@ -1237,12 +1239,14 @@ fig_chart4 <- ggplot(data_chart4, aes(x = year,y = tfr))+
        fill = NULL)+
   blank_theme+
   ylim(0,NA)+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
+  theme(legend.position="bottom",legend.direction="vertical",
+        plot.title=element_text(size=14, face="bold"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 data_chart5 <- wpp.dem |> filter(iso3 == country & year %in% yr_bg2:yr_ed2) |> select(year, births.thsd)
 
 fig_chart5 <- ggplot(data_chart5, aes(x = year,y = births.thsd))+
-  geom_area( fill = unicef_colors[1])+
+  geom_line(color = unicef_colors[1], size=2)+
   geom_vline(xintercept = 2022, linetype="dashed",
                 color = unicef_colors[10], size=1)+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
@@ -1252,7 +1256,10 @@ fig_chart5 <- ggplot(data_chart5, aes(x = year,y = births.thsd))+
        subtitle = paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
        fill = NULL)+
   blank_theme+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
+  theme(legend.position="bottom",
+        legend.direction="vertical",
+        plot.title=element_text(size=14, face="bold"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 fig_chart4
 fig_chart5
@@ -1317,7 +1324,9 @@ fig_igme <- ggplot(igme |> filter(Year %in% seq(1990,latest_year_igme), ISO.Code
        y = 'Deaths per 1 000 total births',
        subtitle = paste0(name_of_country,', 1990-',latest_year_igme))+
   ylim(0,NA)+  #always showing minimum zero
-  theme(plot.title = element_text(face = 'bold'))
+  theme(plot.title = element_text(face = 'bold'),
+        panel.grid.major.x = element_line(color=unicef_colors[9], linetype = "dashed"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 fig_igme
 }
@@ -1443,23 +1452,27 @@ out <- tryCatch({  ilo.df <- ilo.unemploy.wpp |>
 
 ```{r,fig.align = "center"}
 if( flag_ilo){
-
-  data_chart6 <- ilo.unemploy.wpp |> filter(ref_area == country , sex == 'SEX_T' , classif1 == 'AGE_YTHADULT_Y15-24') |> select(time, obs_value) |> mutate( datatype = ifelse(time >2022, 'Projection','Estimation'))
+  data_chart6 <- ilo.unemploy.wpp |>
+    filter(ref_area == country , sex == 'SEX_T' , classif1 == 'AGE_YTHADULT_Y15-24') |> 
+    select(time, obs_value) |> mutate( datatype = ifelse(time >2022, 'Projection','Estimation'))
   yr_bg3 <- min(data_chart6 |> pull(time))
   yr_ed3 <- max(data_chart6 |> pull(time))
 
   fig_chart6 <- ggplot(data_chart6, aes(x = time,y = obs_value, fill = datatype))+
     geom_bar(stat = 'identity', alpha = 0.9 )+
-    geom_text(aes(label = round(obs_value,1)),vjust =0,size = 2.5)+
+    #geom_text(aes(label = round(obs_value,1)),vjust =0,size = 2.5)+
     scale_fill_manual(values = c('Projection' = unicef_colors_bin[2], 'Estimation' = unicef_colors_bin[1]))+
-    labs(
-      y = 'Rate (%)',
+    labs(y = 'Rate (%)',
       x = 'Year',
       title = "Youth (15-24) unemployment rate",
       subtitle = paste0(name_of_country, ", ", yr_bg3,"-",yr_ed3),
       fill = NULL)+
     blank_theme+
-    theme(axis.text.x = element_text(angle=45),plot.title=element_text(size=14, face="bold"),legend.position = "none")
+    ylim(0,NA)+
+    theme(axis.text.x = element_text(angle=45),
+          plot.title=element_text(size=14, face="bold"),
+          legend.position = "none",
+          panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
   fig_chart6}
 ```
@@ -1549,7 +1562,8 @@ fig_chart7 <- ggplot(data_chart78 |> filter(indicator_id == "NY.GDP.MKTP.KD.ZG")
        subtitle = paste0(name_of_country, ", ", yr_bg4,"-",yr_ed4),
        fill = NULL)+
   blank_theme+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
+  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 fig_chart8 <- ggplot(data_chart78 |> filter(indicator_id == 'NY.GNP.PCAP.CD'), aes(x = as.integer(date),y = value))+
   geom_bar( stat = 'identity', fill = unicef_colors_bin[1])+
@@ -1559,7 +1573,8 @@ fig_chart8 <- ggplot(data_chart78 |> filter(indicator_id == 'NY.GNP.PCAP.CD'), a
        subtitle = paste0(name_of_country, ", ", yr_bg5,"-",yr_ed5),
        fill = NULL)+
   blank_theme+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
+  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 print(fig_chart7)
 print(fig_chart8)
@@ -1584,8 +1599,6 @@ dt6 <- edu1.df |> add_column(data.frame("Indicator" = "Youth literacy rate (15-2
 
 myHeader <- c(" " = 1, country.wpp.name = 1)
 names(myHeader) <- c(" ", country.wpp.name)
-
-
 
 kable(dt6,align = c('l','r'))  |> kable_classic(full_width = T) |>
   column_spec(1, bold = T, border_right = T,width = '12cm') |>
@@ -1630,40 +1643,4 @@ kable(dt7, align = c('l','r','r','r'))  |> kable_classic(full_width = T) |>
 2. [IOM -- The Displacement Tracking Matrix (DTM)](https://dtm.iom.int/)  
 3. [OCHA -- The Humanitarian Data Exchange (HDX)](https://data.humdata.org/)  
 4. [UNICEF -- UNICEF Kenya](https://www.unicef.org/kenya/)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
