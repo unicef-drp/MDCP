@@ -257,7 +257,10 @@ prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
 #                 "BGD", "CMR", "ECU", "HND", "IDN", "LBY", "RWA", # blueprint
 #                 "SYR","TUR")
 
-ctry_list <- 'UGA'
+
+#list of countries to generate reports
+
+ctry_list <- 'KEN'
 #ctry_list <- 'USA'
 
 for(i in ctry_list){

@@ -9,7 +9,7 @@ title: ''
 #     number_sections: false
 output:
   bookdown::html_document2:
-    css: style.css
+    #css: style.css
     theme: cerulean
     toc: true
     toc_float:
@@ -18,8 +18,8 @@ output:
 params:
   data: KEN
 
-
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,warning = F,message = F)
 ```
@@ -39,6 +39,19 @@ library(wbstats)
 library(ggrepel)
 ```
 
+```{r, echo = F}
+#Color palettes
+#UNICEF blue and secondary colors
+unicef_colors <- c("#1CABE2", "#00833D", "#80BD41", 
+                   "#FFC20E", "#F26A21", "#E2231A",
+                   "#961A49", "#6A1E74", "#D8D1C9", 
+                   "#777779", "#2D2926", "#374EA2")
+
+#bin UNICEF cyan - UNICEF cyan (20%)
+unicef_colors_bin <- c("#1CABE2", "#d2eef9")
+
+
+```
 
 
 ```{r, echo = F}
@@ -153,14 +166,18 @@ mig.df <- mig.stock.0to17 |> filter(year == 2020 , iso3 == country, sex == 'both
   mutate(year = paste(year,country.wpp.name,sep = " "),pop.mig.total = pop.mig.total/1000, pop.mig.0to17 = pop.mig.0to17/1000) |>
   select(year,'International migrant stock (thousand)' = pop.mig.total,'International migrant stock under age 18 (thousand)' = pop.mig.0to17,'Share under 18 among international migrant stock (%)' = pop.mig.0to17.pct) |>
   rbind(mig.stock.0to17 |> filter(year == 2020 , iso3 %in% country.wpp.insub, sex == 'both') |>
-                  summarise('International migrant stock (thousand)' = sum(pop.mig.total/1000,na.rm = T),'International migrant stock under age 18 (thousand)' = sum(pop.mig.0to17/1000,na.rm = T) ) |>
-           mutate('Share under 18 among international migrant stock (%)' = `International migrant stock under age 18 (thousand)`/`International migrant stock (thousand)`*100, year = c(paste(2020,country.wpp.sub,sep = ' ')))) |>
+          summarise('International migrant stock (thousand)' = sum(pop.mig.total/1000,na.rm = T),
+                    'International migrant stock under age 18 (thousand)' = sum(pop.mig.0to17/1000,na.rm = T) , .groups='drop') |>
+          mutate('Share under 18 among international migrant stock (%)' = `International migrant stock under age 18 (thousand)`/`International migrant stock (thousand)`*100, year = c(paste(2020,country.wpp.sub,sep = ' ')))) |>
   rbind(mig.stock.0to17 |> filter(year == 2020 , area.id < 900, sex == 'both') |>
-                  summarise('International migrant stock (thousand)' = sum(pop.mig.total/1000,na.rm = T),'International migrant stock under age 18 (thousand)' = sum(pop.mig.0to17/1000,na.rm = T) ) |>
-           mutate('Share under 18 among international migrant stock (%)' = `International migrant stock under age 18 (thousand)`/`International migrant stock (thousand)`*100, year = '2020 WORLD')) |>
+          summarise('International migrant stock (thousand)' = sum(pop.mig.total/1000,na.rm = T),
+                    'International migrant stock under age 18 (thousand)' = sum(pop.mig.0to17/1000,na.rm = T) , .groups='drop') |>
+          mutate('Share under 18 among international migrant stock (%)' = `International migrant stock under age 18 (thousand)`/`International migrant stock (thousand)`*100, year = '2020 WORLD')) |>
   cbind(mig.stock.ref |> filter(year == 2020, iso3 == country, indic == 'ref') |>mutate(pop.mig = pop.mig/1000) |> select('Share of refugees among international migrant stock (%)' = pop.mig) |>
-          rbind(mig.stock.ref |> filter(year == 2020, iso3 %in% country.wpp.insub, indic == 'ref') |> summarise('Share of refugees among international migrant stock (%)' = sum(pop.mig/1000, na.rm =T))) |>
-          rbind(mig.stock.ref |> filter(year == 2020, area.id < 900, indic == 'ref') |> summarise('Share of refugees among international migrant stock (%)' = sum(pop.mig/1000, na.rm =T))))  |>
+          rbind(mig.stock.ref |> filter(year == 2020, iso3 %in% country.wpp.insub, indic == 'ref') |>
+                  summarise('Share of refugees among international migrant stock (%)' = sum(pop.mig/1000, na.rm =T), .groups='drop')) |>
+          rbind(mig.stock.ref |> filter(year == 2020, area.id < 900, indic == 'ref') |>
+                  summarise('Share of refugees among international migrant stock (%)' = sum(pop.mig/1000, na.rm =T), .groups='drop')))  |>
   mutate(`Share of refugees among international migrant stock (%)` = `Share of refugees among international migrant stock (%)`/`International migrant stock (thousand)`*100) |>
   left_join(pct_regions |> filter(area %in% c('WORLD',sub_of_country) | iso3 == country) |> mutate(area = paste0(2020,' ',area), mig = mig*100) |> select(area,'Share of international migrants as part of whole population (%)' = mig), by = c('year' = 'area')) |> 
   select(1,2,6,3,4,5)
@@ -172,16 +189,22 @@ ref.df <- unhcr.gt.tab12.new |>mutate(area.id = ifelse(area.unhcr == 'World',900
                                                                         share.ref = pop.ref.asy/(poptotal.thsd*1000)*100,year = ifelse(iso3 == country, paste(year,country.wpp.name,sep = " "),'2021 WORLD'),
                                                                         share.ref.schoolage = ifelse(coverage.sex.age.asy>=0.5, (pop.ref.5to11.fem.asy+pop.ref.12to17.fem.asy+pop.ref.5to11.male.asy+pop.ref.12to17.male.asy)/(pop.ref.total.male.asy + pop.ref.total.fem.asy -pop.ref.unknown.male.asy - pop.ref.unknown.fem.asy)*100,NA),
                                                                         ref.schoolage = pop.ref.asy*share.ref.schoolage/100) |>
-  select(year, 'Refugees (thousand)' = pop.ref.asy,'Refugees under age 18 (thousand)' = pop.ref.0to17.asy, 'Share under 18 among refugees (%)' = prop.ref.0to17.asy, 'Share women among refugees (%)' = prop.women,
-         'Share of the population who are refugees (%)' = share.ref, 'Refugees in school age (5-17 years) (thousand)' = ref.schoolage,'Share of refugees in school age (5-17 years) (%)' = share.ref.schoolage) |>
+  select(year, 'Refugees (thousand)' = pop.ref.asy,
+         'Refugees under age 18 (thousand)' = pop.ref.0to17.asy, 
+         'Share under 18 among refugees (%)' = prop.ref.0to17.asy,
+         'Share women among refugees (%)' = prop.women,
+         'Share of the population who are refugees (%)' = share.ref,
+         'Refugees in school age (5-17 years) (thousand)' = ref.schoolage,
+         'Share of refugees in school age (5-17 years) (%)' = share.ref.schoolage) |>
   rbind(unhcr.gt.tab12.new |> mutate(area.id = ifelse(area.unhcr == 'World',900,area.id)) |> left_join(wpp.age.group |> filter(year == 2021) |> select(area.id,poptotal.thsd), by = 'area.id') |> left_join(wpp.location |> select(area.id, wpp.subregion = subregion), by = 'area.id') |> 
-           filter(wpp.subregion == country.wpp.sub, pop.type == 'Refugees') |>
+          filter(wpp.subregion == country.wpp.sub, pop.type == 'Refugees') |>
           summarise( 'Refugees (thousand)' = sum(pop.ref.asy,na.rm=T),
                      'Refugees under age 18 (thousand)' = sum(pop.ref.0to17.asy,na.rm = T),
                      'Share under 18 among refugees (%)' = sum(pop.ref.0to17.asy,na.rm = T)/sum(pop.ref.asy,na.rm = T)*100,
                      'Share women among refugees (%)' = sum(pop.ref.total.fem.asy,na.rm = T)/sum(pop.ref.data.available.asy, na.rm = T)*100,
                      'Share of the population who are refugees (%)' = sum(pop.ref.asy,na.rm = T)/sum(poptotal.thsd*1000,na.rm = T)*100,
-                     'Share of refugees in school age (5-17 years) (%)' = weighted.mean(ifelse(coverage.sex.age.asy>=0.5, (pop.ref.5to11.fem.asy+pop.ref.12to17.fem.asy+pop.ref.5to11.male.asy+pop.ref.12to17.male.asy)/(pop.ref.total.male.asy + pop.ref.total.fem.asy -pop.ref.unknown.male.asy - pop.ref.unknown.fem.asy)*100,NA),pop.ref.asy,na.rm = T)) |>
+                     'Share of refugees in school age (5-17 years) (%)' = weighted.mean(ifelse(coverage.sex.age.asy>=0.5, (pop.ref.5to11.fem.asy+pop.ref.12to17.fem.asy+pop.ref.5to11.male.asy+pop.ref.12to17.male.asy)/(pop.ref.total.male.asy + pop.ref.total.fem.asy -pop.ref.unknown.male.asy - pop.ref.unknown.fem.asy)*100,NA),pop.ref.asy,na.rm = T),
+                     .groups='drop') |>
           mutate('Refugees in school age (5-17 years) (thousand)' = `Refugees (thousand)`*`Share of refugees in school age (5-17 years) (%)`/100, year= c(paste0('2021',' ',country.wpp.sub)))) |>
   left_join(unhcr.gt.tab18.new |> filter(`Population type1` == 'Refugees', `ISO code` == country) |> mutate(coverage = (Total- `Undefined/ unknown`)/Total) |>
               mutate(pop.camp = ifelse(coverage >= 0.5,`Planned/ managed camp`+`Collective center`+`Self-settled camp`+`Reception/ transit camp`,NA) ) |> 
@@ -201,7 +224,8 @@ ref.df <- unhcr.gt.tab12.new |>mutate(area.id = ifelse(area.unhcr == 'World',900
                       mutate(coverage = (Total- `Undefined/ unknown`)/Total) |> 
                       mutate(pop.camp = ifelse(coverage >= 0.5,`Planned/ managed camp`+`Collective center`+`Self-settled camp`+`Reception/ transit camp`,NA) ) |>
                       mutate(prop.camp = pop.camp/(Total-`Undefined/ unknown`)) |>
-                      summarise(Total_sub = sum(Total,na.rm = T),prop.camp_sub = weighted.mean(prop.camp,Total,na.rm =T)*100)|>
+                      summarise(Total_sub = sum(Total,na.rm = T),prop.camp_sub = weighted.mean(prop.camp,Total,na.rm =T)*100,
+                                .groups='drop')|>
                       mutate(pop.camp.est = Total_sub*prop.camp_sub/100) |>
                       select('Refugees living in camps (thousand)' = pop.camp.est,'Share of refugees living in camps (%)' = prop.camp_sub) |>
                       mutate( year = '2021 WORLD')), by = 'year'
@@ -234,7 +258,8 @@ idp.df <- idmc.conf.dis.2021 |>
                      'Internally displaced persons (IDPs) in school age (5-17) (thousand)' = sum(idp.total.schoolage,na.rm =T) ,
                      'Share of Internally displaced persons (IDPs) due to conflict and violence (%)' = weighted.mean(prop.conf,idp.total,na.rm = T) , 
                      'New internal displacements (thousand)' = sum(idp.total.new,na.rm = T),
-                     'Share of new internal displacements due to conflict and violence (%)' = weighted.mean(prop.conf.new,idp.total.new,na.rm = T)) |>
+                     'Share of new internal displacements due to conflict and violence (%)' = weighted.mean(prop.conf.new,idp.total.new,na.rm = T), 
+                     .groups='drop') |>
           mutate(year = paste0(2021, ' ', country.wpp.sub))) |> 
   rbind(idmc.conf.dis.2021  |> 
           left_join(wpp.age.group.pct |> 
@@ -366,7 +391,7 @@ data2 <- mig.stock.ref |> select(3,4,5,7) |> filter(iso3 == country, indic %in% 
 
 pop_scale <- data2 |> pull(pop.mig) |> median()
 
-colors <- c('Non-refugees' = '#CFF4FF', "Share refugees" = '#0083CF')
+colors <- c('Non-refugees' = unicef_colors_bin[2], "Share refugees" = unicef_colors_bin[1])
 
 fig2 <- ggplot(data2,aes(x = as.factor(year), y = population,fill = pop.type,label = ref_pct))+
   geom_bar(stat='identity',alpha =0.7)+
@@ -374,12 +399,11 @@ fig2 <- ggplot(data2,aes(x = as.factor(year), y = population,fill = pop.type,lab
   geom_text(data = data2 |> filter(pop.type == 'Non-refugees'), aes(y = pop.mig, label = addUnits(pop.mig)), vjust=0, size = 3) +
   scale_fill_manual(breaks= 'Share refugees', values = colors)+
   scale_y_continuous(labels = addUnits)+
-  labs(
-    y = 'Population',
-    x = 'Year',
-    title = "Trend in migrant stock",
-    subtitle = paste0(name_of_country,' 1990-2020'),
-    fill = NULL)+
+  labs(y = 'Population',
+       x = 'Year',
+       title = "Trend in migrant stock",
+       subtitle = paste0(name_of_country,' 1990-2020'),
+       fill = NULL)+
   blank_theme
 
 fig2
@@ -423,7 +447,7 @@ data5 <- data5 |> bind_rows(age_pyramid_female_non,age_pyramid_male_non) |>
   mutate(pct = pop/sum(pop), age.group = factor(age.group,level = unique(age.group)))
 
 
-colors <- c('female' = '#0083CF', 'male' = '#69DBFF')
+colors <- c('female' = unicef_colors_bin[1], 'male' = unicef_colors_bin[2])
 
 fig5 <- ggplot(data=data5,aes(x= age.group, y = pct)) + 
   geom_bar(data= data5 |> filter(sex == 'female', type == 'migrant'),aes(fill = 'female'), stat = 'identity',alpha = 0.4) + 
@@ -543,7 +567,7 @@ par(mar = rep(1, 4))
 # Base plot
 chordDiagram(
   x = data1 |> select(orig.area.diagram,dest.area.diagram,pop), 
-  grid.col = c('#69DBFF', rep('#0083CF',length(union(data1|>distinct(orig)|> pull(),data1|>distinct(dest)|> pull()))-1)),
+  grid.col = c(unicef_colors_bin[1], rep(unicef_colors_bin[2],length(union(data1|>distinct(orig)|> pull(),data1|>distinct(dest)|> pull()))-1)),
   transparency = 0.25,
   directional = 1,
   direction.type = c("arrows", "diffHeight"), 
@@ -588,14 +612,14 @@ circos.trackPlotRegion(
 <font size = 1>***Source:*** _United Nations, Department of Economic and Social Affairs, Population Division, Trends in International Migrant Stock: Migrants by Age and Sex, United Nations, New York, 2021._</font> 
 
 
-#### Missing Migrants 
+### Missing Migrants 
 The International Organization for Migration (IOM)’s [Missing Migrants Project](https://missingmigrants.iom.int/) records incidents in which migrants, including refugees and asylum-seekers, have died at state borders or in the process of migrating to an international destination. It includes migrants who have died at the external borders of states, or in the process of migration towards an international destination, regardless of their legal status. The Project records only those migrants who die during their journey to a country different from their country of residence.
 
 The count excludes deaths that occur in immigration detention facilities or after deportation to a migrant’s homeland, as well as deaths more loosely connected with migrants´ irregular status, such as those resulting from labour exploitation. Migrants who die or go missing after they are established in a new home are also not included in the data, so deaths in refugee camps or housing are excluded.  The deaths of internally displaced persons who die within their country of origin are also excluded.
 
 ```{r,fig.align = "center",out.width="100%", warning=FALSE}
-colfunc <- colorRampPalette(c("#69DBFF", "#0083CF"))
-colors <- c(colfunc(4),'grey60','grey30')
+colfunc <- colorRampPalette(c(unicef_colors_bin[1], unicef_colors_bin[2]))
+colors <- c(colfunc(4), unicef_colors[9],unicef_colors[10])
 load('../data/MMG.Rdata')
 dt_mmg_ctr <- dt_missing |> 
   filter(grepl(country.wpp.name, dt_missing$`Location of death`)) |> 
@@ -612,7 +636,7 @@ if(nrow(dt_mmg_ctr) == 0){
          color = NULL,
          y = 'Deaths',x = NULL)+
     scale_fill_manual(values = colors)+
-    #scale_x_discrete(limits = 2014:2022)+
+    scale_x_discrete(limits = 2014:2022)+
     theme_minimal()+
     theme(legend.position="bottom", 
           legend.text = element_text(size=8), 
@@ -630,7 +654,7 @@ if(nrow(dt_mmg_ctr) == 0){
 <font size = 1>***Source:*** _IOM, Missing Migrants Protect, https://missingmigrants.iom.int/downloads, accessed Feb.2022_</font>
 
 
-#### Refugees 
+### Refugees 
 **Refugees** are persons who are unable or unwilling to return to their country of origin owing to a well-founded fear of being persecuted for reasons of race, religion, nationality, membership of a particular social group, or political opinion.
 
 Refugees are people who have fled war, violence, conflict or persecution and have crossed an international border to find safety in another country.
@@ -696,7 +720,7 @@ if(country %in% c('JOR','SYR','LBN','PSE')){
 
 ```{r, fig.align = "center", warning=FALSE}
 findcolor <- function(year) {
-  func <-colorRampPalette(c("#33CFFF", "#CFF4FF"))
+  func <-colorRampPalette(c(unicef_colors_bin[1], unicef_colors_bin[2]))
   color <- func(7)[year-2012]
   return(color)}
 
@@ -720,7 +744,7 @@ data_enrlmnt_cmpr[1:3,3:4] <- ref.uis.df |>
 
 data_enrlmnt_cmpr <- mutate(data_enrlmnt_cmpr, 
                             fill = ifelse(is.na(rate),'No data',paste0(type,', ',year))) |>
-  mutate(color = ifelse(is.na(rate),'white',ifelse(type == 'Refugees','#0083CF',findcolor(as.numeric(year)))))
+  mutate(color = ifelse(is.na(rate),'white',ifelse(type == 'Refugees', unicef_colors_bin[1],findcolor(as.numeric(year)))))
 
 fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = color, label = round(rate,1)))+
     geom_bar(stat = 'identity',position = 'dodge', alpha = 0.7)+
@@ -731,12 +755,12 @@ fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = col
          fill = NULL)+
     ylab('Per cent')+
     scale_fill_manual(labels = c('No data','Refugees',data_enrlmnt_cmpr |> filter(type == 'Population' & !is.na(rate)) |> distinct(fill) |> pull()),
-                      values = c('white','#0083CF',data_enrlmnt_cmpr |> filter(type == 'Population'& !is.na(rate)) |> distinct(color) |> pull()),
-                      limits = c('white','#0083CF',data_enrlmnt_cmpr |> filter(type == 'Population' & !is.na(rate)) |> distinct(color) |> pull()),
+                      values = c('white',unicef_colors_bin[1],data_enrlmnt_cmpr |> filter(type == 'Population'& !is.na(rate)) |> distinct(color) |> pull()),
+                      limits = c('white',unicef_colors_bin[1],data_enrlmnt_cmpr |> filter(type == 'Population' & !is.na(rate)) |> distinct(color) |> pull()),
                       guide = "legend",drop = FALSE)+
     theme(plot.title = element_text(size=10,face="bold"),
           plot.subtitle = element_text(size = 9),
-          legend.key = element_rect(fill = NA, color = 'black'))
+          legend.key = element_rect(fill = NA, color = unicef_colors[11]))
   
   fig_enrlmnt_cmpr
 ```
@@ -746,7 +770,7 @@ fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = col
 <font size = 1>_UNHCR, Coming Together For Refugee Education. Education Report 2020, UNHCR, Geneva, Sep 2020._</font>
 <font size = 1>_UNESCO Institute for Statistics, UIS database, http://data.uis.unesco.org, 2020_</font>
 
-#### UNHCR Operational data (Prospect countries only)
+### UNHCR Operational data (Prospect countries only)
 The Operational Data Portal (ODP) was created in 2011 to enable UNHCR’s institutional responsibility to provide an information and data sharing platform to facilitate coordination of refugee emergencies. This section is generated from UNHCR's ODP and contains the latest refugee data.  
 
 ```{r}
@@ -784,7 +808,7 @@ ggplot(dt_unhcr_op_plt,aes(x = area |> reorder(population),y = population,fill =
 
 <font size = 1>***Source:*** _UNCHR, Operational Data Portal, https://data2.unhcr.org/en/countries/, accessed 2022_</font>
 
-#### Digital connectivity among refugees
+### Digital connectivity among refugees
 
 Mobile cellular coverage is important in digital connectivity as it allows people to stay connected, access information and services, and participate in the digital economy. In areas with limited or no mobile network coverage, people may face barriers to accessing critical services such as healthcare, education, and emergency services and participating in social, economic, and political activities.
 
@@ -810,7 +834,7 @@ kable(dt10, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
 ```
 <font size = 1>***Source:*** _UNCHR, Connecting Refugees, https://www.unhcr.org/publications/operations/5770d43c4/connecting-refugees.html, Geneva, 2016._</font>
 
-#### Internally displaced persons (IDPs) 
+### Internally displaced persons (IDPs) 
 **Internally Displaced Persons** are “Persons or groups of persons who have been forced or obliged to flee or to leave their homes or places of habitual residence, in particular as a result of or in order to avoid the effects of armed conflict, situations of generalized violence, violations of human rights or natural or human-made disasters, and who have not crossed an internationally recognized State border” ([UN Guiding Principles on Internal Displacement](https://www.unhcr.org/43ce1cff2.pdf)).
 
 The [Internal Displacement Monitoring Centre (IDMC)](https://www.internal-displacement.org/) estimates the total number of IDPs at the end of the year by verifying and triangulating data from variety of sources such as national and international organizations, governments, media reports, and other publicly available sources.
@@ -851,11 +875,11 @@ if(nrow(data.idp) == 0){
     coord_polar(theta="y") +
     xlim(c(-1, 4)) +
     facet_wrap('disp.type')+
-    scale_fill_manual(name = NULL, labels = c('Conflict-related','Disaster-related'),values = c('#f2a664','#73bbdd'))+
-    scale_color_manual(name = NULL, labels = c('Conflict-related','Disaster-related'),values = c('#f2a664','#73bbdd'))+
+    scale_fill_manual(name = NULL, labels = c('Conflict-related','Disaster-related'),values = c(unicef_colors[1], unicef_colors[2]))+
+    scale_color_manual(name = NULL, labels = c('Conflict-related','Disaster-related'),values = c(unicef_colors[1],unicef_colors[2]))+
     labs(
       title = "Number of internally displaced persons and new displacements",
-      subtitle = paste0("by cause of displacement, ",country.wpp.name,", 2021"),
+      subtitle = paste0("by cause of displacement, ", country.wpp.name,", 2021"),
       fill = NULL)+
     theme(axis.line=element_blank(),
           axis.text.y=element_blank(),
@@ -878,7 +902,7 @@ if(nrow(data.idp) == 0){
   print(paste0(''))
 }else{
   fig.adet <-  ggplot(data = data.adet, aes(x = start.date, y = idp.dis.new, size = idp.dis.new, color = hazard.cat)) + geom_point() +
-    scale_color_manual(name = NULL, labels = c('Geophysical','Weather-related'),values = c('#CFF4FF','#0083CF'))+
+    scale_color_manual(name = NULL, labels = c('Geophysical','Weather-related'),values = c(unicef_colors_bin[2],unicef_colors_bin[1]))+
     labs(
       title = "Annual disaster events timeline",
       subtitle = paste0("by cause of displacement, ",country.wpp.name,", 2008-2021"),
@@ -888,7 +912,7 @@ if(nrow(data.idp) == 0){
     scale_x_date(breaks = as.Date(c('2008-01-01','2011-01-01','2014-01-01','2017-01-01','2020-01-01')))+
     theme_minimal()+
 
-    guides(size = F)
+    guides(size = "none")
 
   fig.adet
 }
@@ -909,7 +933,7 @@ data3 <- rbind(unhcr.gt.tab12.new |> filter(iso3 == country, pop.type == 	'Refug
          label = ifelse(is.na(pop) & is.na(pop_child_share),'No data', paste0(round(population/1000,1),' (',ifelse(is.na(pop_child_share), 100,round(pop_child_share*100,1)),'%)'))) |> distinct(type,label, .keep_all = TRUE)
 
 if(data3 |> distinct(pop.type) |> nrow() == 2){
-   colors <- c("Population 18 plus" = '#CFF4FF', "Population under 18" = '#0083CF')
+   colors <- c("Population 18 plus" = unicef_colors_bin[1], "Population under 18" = unicef_colors_bin[2])
    fig3 <- ggplot(data3,aes(x = as.factor(type), y = population/1000,fill = pop.type,label = paste0(round(population/1000,1),' (',round(pop_child_share*100,1),'%)')))+
   geom_bar(stat='identity',position = 'stack',alpha =0.7)+
   geom_text_repel(data = data3 |> filter(pop.type != 'Population (without disaggregation by age)'),aes(y = ifelse(label == 'No data',0,population/1000)), size = 3,position = position_stack(vjust = 0.5)) +
@@ -925,7 +949,7 @@ if(data3 |> distinct(pop.type) |> nrow() == 2){
   blank_theme+
   theme(axis.text.x = element_text(angle = 15))
 } else {
-  colors <- c("Population 18 plus" = '#CFF4FF', "Population under 18" = '#0083CF','Population (without disaggregation by age)' = 'grey')
+  colors <- c("Population 18 plus" = unicef_colors_bin[2], "Population under 18" = unicef_colors_bin[1],'Population (without disaggregation by age)' = unicef_colors[10])
   fig3 <- ggplot(data3,aes(x = as.factor(type), y = population/1000,fill = pop.type,label = label))+
   geom_bar(stat='identity',position = 'stack',alpha =0.7)+
   geom_text_repel(data = data3 |> filter(pop.type != 'Population (without disaggregation by age)'),aes(y = ifelse(label == 'No data',0,population/1000)), size = 3,position = position_stack(vjust = 0.5)) +
@@ -951,7 +975,7 @@ fig3
 <font size = 1>***Source:*** _UNICEF analysis based on IDMC, Global Internal Displacement Database, 2021._</font>
 
 
-#### IOM DTM operation data on internal displacements (Prospect countries only)
+### IOM DTM operation data on internal displacements (Prospect countries only)
 <font size = 1>_The Displacement Tracking Matrix (DTM) gathers and analyzes data to disseminate critical multilayered information on the mobility, vulnerabilities, and needs of displaced and mobile populations that enables decision makers and responders to provide these populations with better context specific assistance. This section is generated from IOM's DTM and contains the latest internal displacement data available. _</font>
 
 ```{r,fig.align = "center",out.width="100%", eval=FALSE}
@@ -974,12 +998,12 @@ if(country.wpp.name %in% prospect_country){
     geom_scatterpie_legend(radius = sqrt(c(1000,3000,8000))/200,y = -3,x = 35, n = 3, labeller = function(x) paste0(round((x*200)^2),'')  )+
     scale_fill_manual(breaks = c("pop_conf", "pop_disaster"),
                       labels = c('Conflict related','Disaster related'),
-                      values = c('#69DBFF','#0083CF')) +
+                      values = c(unicef_colors[1],unicef_colors[2])) +
     labs(title = "IOM operational data on IDPs by reason of displacement",
          subtitle = 'Kenya, 2015', fill = NULL) +
     coord_fixed() +
     theme_bw() +
-    guides(lty = FALSE) +
+    guides(lty = "none") +
     theme(legend.position = 'bottom',
           legend.justification = c(1, 0),
           panel.grid = element_blank(),
@@ -1053,10 +1077,10 @@ data_chart1 <- wpp.age.group |> filter(iso3 == country & year %in% yr_bg1:yr_ed1
 
 fig_chart1 <-ggplot(data_chart1, aes(x = year,y = population/1000, fill = `age group`,alpha = datatype))+
   geom_area()+
-  geom_vline(xintercept = 2021.5, linetype="dotted",
-                color = "grey", size=1.5)+
-#  annotate(geom = 'text', label = '2022', x = 2019.5, y = Inf,size = 2, color = 'grey', hjust = 1.5, vjust = 3)+
-  scale_fill_manual(name = NULL, values = c('#d9d9d9','#969696', '#0083CF', '#CFF4FF'))+
+  geom_vline(xintercept = 2021.5, linetype="dashed",
+                color = unicef_colors[10], size=1)+
+#  annotate(geom = 'text', label = '2022', x = 2019.5, y = Inf,size = 2, color = unicef_colors[10], hjust = 1.5, vjust = 3)+
+  scale_fill_manual(name = NULL, values = c(unicef_colors[9], unicef_colors[10], unicef_colors_bin[1], unicef_colors_bin[2]))+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
   scale_alpha_discrete(name = NULL,range = c(1,0.3))+
   labs(
@@ -1112,10 +1136,10 @@ data_chart2 <- wpp.age.group.pct |> filter(iso3 == country & year %in% yr_bg1:yr
 
 fig_chart2 <-ggplot(data_chart2, aes(x = year,y = population, fill = `age group`,alpha = datatype))+
   geom_area()+
-  geom_vline(xintercept = 2021.5, linetype="dotted",
-                color = "grey", size=1.5)+
-#  annotate(geom = 'text', label = '2022', x = 2019.5, y = Inf,size = 2, color = 'grey', hjust = 1.5, vjust = 3)+
-  scale_fill_manual(name = NULL, values = c('#d9d9d9','#969696', '#0083CF', '#CFF4FF'))+
+  geom_vline(xintercept = 2021.5, linetype="dashed",
+                color = unicef_colors[10], size=1)+
+#  annotate(geom = 'text', label = '2022', x = 2019.5, y = Inf,size = 2, color = unicef_colors[10], hjust = 1.5, vjust = 3)+
+  scale_fill_manual(name = NULL, values = c(unicef_colors[9], unicef_colors[10], unicef_colors_bin[1], unicef_colors_bin[2]))+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
   scale_alpha_discrete(name = NULL,range = c(1,0.7))+
   labs(
@@ -1144,7 +1168,7 @@ age_pyramid_male <- wpp.5y.age.group.male |> filter(area.id == id_of_country, ye
 data_chart3 <-  bind_rows(age_pyramid_female,age_pyramid_male) |> group_by(year) |> mutate(pct = pop/sum(pop), age.group = factor(age.group,level = unique(age.group)))
 
 
-colors <- c('female' = '#0083CF', 'male' = '#69DBFF')
+colors <- c('female' = unicef_colors_bin[1], 'male' = unicef_colors_bin[2])
 
 fig_chart3 <- ggplot(data=data_chart3,aes(x= age.group, y = pct)) +
   geom_bar(data= data_chart3 |> filter(sex == 'female', year == 2022),aes(fill = 'female'), stat = 'identity',alpha = 0.4) +
@@ -1207,32 +1231,31 @@ yr_ed2 <- 2050
 data_chart4 <- wpp.dem |> filter(iso3 == country & year %in% yr_bg2:yr_ed2) |> select(year,  tfr)
 
 fig_chart4 <- ggplot(data_chart4, aes(x = year,y = tfr))+
-  geom_area( fill = '#00AEEF')+
-  geom_vline(xintercept = 2022, linetype="dotted",
-                color = "grey", size=1.5)+
+  geom_line(color = unicef_colors[1], size=2)+
+  geom_vline(xintercept = 2022, linetype="dashed",
+             color = unicef_colors[10], size=1)+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
-  labs(
-    y = 'Live births per woman',
-    x = 'Year',
-    title = "Total fertility rate",
-    subtitle = paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
-    fill = NULL)+
+  labs(y = 'Live births per woman',
+       x = 'Year',
+       title = "Total fertility rate",
+       subtitle = paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
+       fill = NULL)+
   blank_theme+
+  ylim(0,NA)+
   theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
 
 data_chart5 <- wpp.dem |> filter(iso3 == country & year %in% yr_bg2:yr_ed2) |> select(year, births.thsd)
 
 fig_chart5 <- ggplot(data_chart5, aes(x = year,y = births.thsd))+
-  geom_area( fill = '#00AEEF')+
-  geom_vline(xintercept = 2022, linetype="dotted",
-                color = "grey", size=1.5)+
+  geom_area( fill = unicef_colors[1])+
+  geom_vline(xintercept = 2022, linetype="dashed",
+                color = unicef_colors[10], size=1)+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
-  labs(
-    y = 'Births (thousand)',
-    x = 'Year',
-    title = "Number of births",
-    subtitle = paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
-    fill = NULL)+
+  labs(y = 'Births (thousand)',
+       x = 'Year',
+       title = "Number of births",
+       subtitle = paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
+       fill = NULL)+
   blank_theme+
   theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
 
@@ -1240,7 +1263,7 @@ fig_chart4
 fig_chart5
 ```
 
-<font size = 1>***Source:*** _United Nations, Department of Economic and Social Affairs, Population Division, World Population Prospects: The 2022 Revision, United Nations, New York, 2022._</font>
+<font size = 1>***Source:*** _United Nations, Department of Economic and Social Affairs, Population Division, 2022 Revision of World Population Prospects_</font>
 
 ### Child mortality indicators
 
@@ -1268,11 +1291,9 @@ igme.df <- igme |> mutate_at(.vars = c('Year', 'Median', 'Lower', 'Upper'), as.n
   select(year,'Adolescent (10-19 years) mortality rate (deaths per 1 000 live births)' = Median), by = 'year') |>
   mutate_if(is.numeric,~ifelse(year == 'latest',paste0(round(.,1),' (', latest_year_igme,')'),round(.,1)))
 
-
 dt.igme <- igme.df |>
   pivot_longer(-year) |>
   pivot_wider(names_from=year, values_from=value)
-
 
 colnames(dt.igme) <- c('Indicator', '2000' ,'Latest')
 
@@ -1295,12 +1316,12 @@ if(!nrow(dt.igme) == 0){
 fig_igme <- ggplot(igme |> filter(Year %in% seq(1990,latest_year_igme), ISO.Code == country), aes(x = Year, y = Median, color = Indicator,shape = Indicator)) +
   geom_line(size = 0.8, linetype = "dashed") +
   geom_point(size =2)+
-  scale_color_manual(values = c('#d9d9d9','#969696', '#0083CF', '#a1cdff'))+
+  scale_color_manual(values = c(unicef_colors[9], unicef_colors[10], unicef_colors_bin[1], unicef_colors_bin[2]))+
   blank_theme+
-  labs(
-    title = 'Mortality indicators',
-    y = 'Deaths per 1 000 total births',
-    subtitle = paste0(name_of_country,', 1990-',latest_year_igme))+
+  labs(title = 'Mortality indicators',
+       y = 'Deaths per 1 000 total births',
+       subtitle = paste0(name_of_country,', 1990-',latest_year_igme))+
+  ylim(0,NA)+  #always showing minimum zero
   theme(plot.title = element_text(face = 'bold'))
 
 fig_igme
@@ -1311,9 +1332,6 @@ fig_igme
 
 ### Child protection indicators
 ```{r}
-
-
-
 cp.df <- cp.br.under5 |> ungroup() |> filter(iso3 == country) |> mutate('Latest year' = paste0(round(OBS_VALUE.Observation.Value,1),' (',TIME_PERIOD.Time.period,')')) |> select(`Latest year`)
 
 dt9 <- cp.df |> add_column(data.frame("Indicator" = "Percentage of children under age 5 whose births are registered (%)"), .before = 1)
@@ -1336,20 +1354,18 @@ if(nrow(dt9) == 0){
 ```{r,fig.align = "center"}
 if(nrow(dt9) != 0){
 time_chart9 <- cp.br.under5 |> filter(iso3 == country) |> pull(TIME_PERIOD.Time.period)
-data_chart9 <- cp.br.under5 |> filter(iso3 == country) |> select(registered = OBS_VALUE.Observation.Value) |> mutate(unregistered = 100- registered) |> gather(key = 'class', value = 'prop',1:2) |> arrange(desc(class)) |>
+data_chart9 <- cp.br.under5 |> filter(iso3 == country) |> select(Registered = OBS_VALUE.Observation.Value) |> mutate(Unregistered = 100- Registered) |> gather(key = 'class', value = 'prop',1:2) |> arrange(desc(class)) |>
   mutate(lab.ypos = cumsum(prop) - 0.5*prop)
-
 
 fig_chart9 <- ggplot(data_chart9, aes(x = 2, y = prop, fill = class)) +
   geom_bar(stat = "identity", color = "white") +
   coord_polar(theta = "y", start = 0)+
-  geom_text(aes(y = lab.ypos, label = round(prop,1)))+
-  scale_fill_manual(values = c('#69DBFF', 'grey'))+
+  geom_text(aes(y = lab.ypos, label = paste0(round(prop,1), "%")))+
+  scale_fill_manual(values = c(unicef_colors[1], unicef_colors[9]))+
   theme_void()+
-  labs(
-    title = paste0('Percentage of children under age 5 whose births are registered (%)'),
-    subtitle = paste0(name_of_country,', ',time_chart9),
-    fill = NULL)+
+  labs(title = paste0('Percentage of children under age 5 whose births are registered (%)'),
+       subtitle = paste0(name_of_country,', ',time_chart9),
+       fill = NULL)+
   xlim(0.5, 2.5)+
   theme(plot.title = element_text(face = 'bold'))
 
@@ -1440,7 +1456,7 @@ if( flag_ilo){
   fig_chart6 <- ggplot(data_chart6, aes(x = time,y = obs_value, fill = datatype))+
     geom_bar(stat = 'identity', alpha = 0.9 )+
     geom_text(aes(label = round(obs_value,1)),vjust =0,size = 2.5)+
-    scale_fill_manual(values = c('Projection' = '#69DBFF', 'Estimation' = '#00AEEF'))+
+    scale_fill_manual(values = c('Projection' = unicef_colors_bin[2], 'Estimation' = unicef_colors_bin[1]))+
     labs(
       y = 'Rate (%)',
       x = 'Year',
@@ -1530,25 +1546,23 @@ yr_bg5 <- min(data_chart78 |> filter(indicator_id == 'NY.GNP.PCAP.CD') |> pull(d
 yr_ed5 <- max(data_chart78 |> filter(indicator_id == 'NY.GNP.PCAP.CD') |> pull(date))
 
 fig_chart7 <- ggplot(data_chart78 |> filter(indicator_id == "NY.GDP.MKTP.KD.ZG"), aes(x = as.integer(date),y = value))+
-  geom_line( color = '#00AEEF', size = 2)+
-  geom_hline(yintercept = 0, color = 'black')+
-  labs(
-    y = 'Per cent (%)',
-    x = 'Year',
-    title = "GDP growth (annual %)",
-    subtitle = paste0(name_of_country, ", ", yr_bg4,"-",yr_ed4),
-    fill = NULL)+
+  geom_line( color = unicef_colors_bin[1], size = 2)+
+  geom_hline(yintercept = 0, color = unicef_colors[11])+
+  labs(y = 'Per cent (%)',
+       x = 'Year',
+       title = "GDP growth (annual %)",
+       subtitle = paste0(name_of_country, ", ", yr_bg4,"-",yr_ed4),
+       fill = NULL)+
   blank_theme+
   theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
 
 fig_chart8 <- ggplot(data_chart78 |> filter(indicator_id == 'NY.GNP.PCAP.CD'), aes(x = as.integer(date),y = value))+
-  geom_bar( stat = 'identity', fill = '#00AEEF')+
-  labs(
-    y = 'US$',
-    x = 'Year',
-    title = "GNI per capita, Atlas method (current US$))",
-    subtitle = paste0(name_of_country, ", ", yr_bg5,"-",yr_ed5),
-    fill = NULL)+
+  geom_bar( stat = 'identity', fill = unicef_colors_bin[1])+
+  labs(y = 'US$',
+       x = 'Year',
+       title = "GNI per capita, Atlas method (current US$))",
+       subtitle = paste0(name_of_country, ", ", yr_bg5,"-",yr_ed5),
+       fill = NULL)+
   blank_theme+
   theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
 
