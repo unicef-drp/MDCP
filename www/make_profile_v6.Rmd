@@ -39,19 +39,6 @@ library(wbstats)
 library(ggrepel)
 ```
 
-```{r, echo = F}
-#Color palettes
-#UNICEF blue and secondary colors
-unicef_colors <- c("#1CABE2", "#00833D", "#80BD41", 
-                   "#FFC20E", "#F26A21", "#E2231A",
-                   "#961A49", "#6A1E74", "#D8D1C9", 
-                   "#777779", "#2D2926", "#374EA2")
-
-#bin UNICEF cyan - UNICEF cyan (20%)
-unicef_colors_bin <- c("#1CABE2", "#d2eef9")
-
-
-```
 
 
 ```{r, echo = F}
@@ -247,7 +234,7 @@ idp.df <- idmc.conf.dis.2021 |>
          'Share of new internal displacements due to conflict and violence (%)' = prop.conf.new) |>
   rbind(idmc.conf.dis.2021  |> 
           left_join(wpp.age.group.pct |> 
-                                           select(year,iso3,pop0to4.pct),by = c('year','iso3.join' = 'iso3')) |> 
+                      select(year,iso3,pop0to4.pct),by = c('year','iso3.join' = 'iso3')) |> 
           left_join(wpp.location |> select(iso3,wpp.subregion = subregion), by = 'iso3' )|> 
           mutate_if(is.numeric,replace_na,0)  |>
           mutate(wpp.subregion = ifelse(iso3 == 'AB9', 'Eastern Africa',wpp.subregion)) |>
@@ -373,31 +360,20 @@ kable(dt_mig_2020[1:5,], align = c('l',rep('r',3))) |> kable_classic(full_width 
  
 
 ```{r, message=F,warning=F,out.width="50%"}
-
-addUnits <- function(n) {
-  labels <- ifelse(n < 1000, n,  # less than thousands
-                   ifelse(n < 1e6, paste0(round(n/1e3), 'k'),  # in thousands
-                          ifelse(n < 1e9, paste0(round(n/1e6,1), 'M'),  # in millions
-                                 ifelse(n < 1e12, paste0(round(n/1e9,1), 'B'), # in billions
-                                        ifelse(n < 1e15, paste0(round(n/1e12), 'T'), # in trillions
-                                               'too big!'
-                                        )))))
-  return(labels)
-}
-
 data2 <- mig.stock.ref |> select(3,4,5,7) |> filter(iso3 == country, indic %in% c('ref','ref_pct')) |> spread(key = 'indic', value = 'pop.mig') |>
-  left_join(mig.stock |> filter(sex == 'both') |> select(year,iso3,pop.mig), by = c('year','iso3')) |> mutate(ref_pct = paste0(round(ref_pct,1),'%'),non_ref = pop.mig - ref) |> gather(key = pop.type, value = population,c(3,6)) |>
-  mutate(pop.type = factor(pop.type,levels = c('non_ref','ref'), labels = c('Non-refugees','Share refugees')))
+  left_join(mig.stock |> filter(sex == 'both') |> select(year,iso3,pop.mig), by = c('year','iso3')) |> 
+  mutate(ref_pct = paste0(round(ref_pct,1),'%'),
+         non_ref = pop.mig - ref) |> 
+  gather(key = pop.type, value = population,c(3,6)) |>
+  mutate(pop.type = factor(pop.type,levels = c('non_ref','ref'), labels = c('Non-refugees','Refugees')))
 
 pop_scale <- data2 |> pull(pop.mig) |> median()
 
-colors <- c('Non-refugees' = unicef_colors_bin[2], "Share refugees" = unicef_colors_bin[1])
-
-fig2 <- ggplot(data2,aes(x = as.factor(year), y = population,fill = pop.type,label = ref_pct))+
+fig2 <- ggplot(data2,aes(x = as.factor(year), y = population, fill = pop.type, label = ref_pct))+
   geom_bar(stat='identity',alpha =0.7)+
-  geom_text(data = data2 |> filter(pop.type == 'Share refugees'), aes(y = population), size = 3,position = position_stack(vjust = 0.5)) +
+  geom_text(data = data2 |> filter(pop.type == 'Refugees'), aes(y = population), size = 3,position = position_stack(vjust = 0.5)) +
   geom_text(data = data2 |> filter(pop.type == 'Non-refugees'), aes(y = pop.mig, label = addUnits(pop.mig)), vjust=0, size = 3) +
-  scale_fill_manual(breaks= 'Share refugees', values = colors)+
+  scale_fill_manual(values = c(unicef_colors_bin[2], unicef_colors_bin[1]))+
   scale_y_continuous(labels = addUnits)+
   labs(y = 'Population',
        x = 'Year',
@@ -425,14 +401,15 @@ pop.female <- wpp.age.group.female |>
 
 data5 <- mig.stock.age |> filter(iso3 == country, year == 2020, sex != 'both', age.group != 'total') |> 
   select(4,pop = pop.mig,6) |>
-  mutate(type = 'migrant')
+  mutate(type = 'migrant') 
 
 age_pyramid_female_non <- wpp.5y.age.group.female |>
   filter(area.id == id_of_country, year == 2020) |> select(5:25) |> 
   mutate(pop75plus.thsd = pop75to79.thsd+pop80to84.thsd+pop85to89.thsd+pop90to94.thsd+pop95to99.thsd+pop100plus.thsd) |>
   select(1:15, pop75plus.thsd) |> gather(key = 'age.group', value = 'pop') |> mutate(age.group = str_replace(age.group,'pop','')) |>
   mutate(age.group = str_replace(age.group,'.thsd',''), pop = pop*1000, sex = 'female') |> left_join(data5, by = c('age.group','sex')) |>
-  mutate(pop = pop.x-pop.y, type = 'non-migrant') |> select(age.group,pop,sex,type) 
+  mutate(pop = pop.x-pop.y, type = 'non-migrant') |>
+  select(age.group,pop,sex,type) 
 
 age_pyramid_male_non <- wpp.5y.age.group.male |>
   filter(area.id == id_of_country, year == 2020) |>
@@ -444,29 +421,27 @@ age_pyramid_male_non <- wpp.5y.age.group.male |>
 
 data5 <- data5 |> bind_rows(age_pyramid_female_non,age_pyramid_male_non) |>
   group_by(type) |>
-  mutate(pct = pop/sum(pop), age.group = factor(age.group,level = unique(age.group)))
+  mutate(pct = pop/sum(pop), age.group = factor(age.group,level = unique(age.group)))|> 
+  left_join(age.group.labels, by="age.group")
 
 
-colors <- c('female' = unicef_colors_bin[1], 'male' = unicef_colors_bin[2])
-
-fig5 <- ggplot(data=data5,aes(x= age.group, y = pct)) + 
-  geom_bar(data= data5 |> filter(sex == 'female', type == 'migrant'),aes(fill = 'female'), stat = 'identity',alpha = 0.4) + 
-  geom_bar(data= data5 |> filter(sex == 'male', type == 'migrant'), aes(y = pct * -1, fill = 'male'), stat = 'identity', alpha = 0.4) + 
-  geom_bar(data= data5 |> filter(sex == 'female', type == 'non-migrant'), aes(color = 'female'), stat = 'identity', alpha = 0) + 
-  geom_bar(data= data5 |> filter(sex == 'male', type == 'non-migrant'), aes(y = pct * -1, color = 'male'), stat = 'identity', alpha = 0) + 
+fig5 <- ggplot(data=data5,aes(x = age.group.label, y = pct)) + 
+  geom_bar(data=data5 |> filter(sex=='female', type=='migrant'), aes(fill='female'), stat='identity',alpha=0.4) + 
+  geom_bar(data=data5 |> filter(sex=='male', type=='migrant'), aes(y=pct * -1, fill='male'), stat='identity', alpha=0.4) + 
+  geom_bar(data=data5 |> filter(sex=='female', type=='non-migrant'), aes(color='female'), stat='identity', alpha=0) + 
+  geom_bar(data=data5 |> filter(sex=='male', type=='non-migrant'), aes(y=pct * -1, color='male'), stat='identity', alpha=0) + 
   scale_y_continuous(breaks=seq(-0.08,0.08,0.02),labels=paste0(abs(seq(-8,8,2)),'%')) + 
-  scale_fill_manual(values = colors)+
-  scale_color_manual(values = colors)+
+  scale_fill_manual(values = unicef_colors_bin)+
+  scale_color_manual(values = unicef_colors_bin)+
   coord_flip()+
   blank_theme +
-  theme( axis.title.y = element_blank())+
+  theme(axis.title.y = element_blank())+
   labs(title = 'Age pyramid of migrants and non-migrants',
-       subtitle = paste0(name_of_country,', 2020' ),
+       subtitle = paste0(name_of_country,', 2020'),
        fill = 'migrant',
        color = 'non-migrant')
 
 fig5
-
 ```  
   
   
@@ -746,23 +721,24 @@ data_enrlmnt_cmpr <- mutate(data_enrlmnt_cmpr,
                             fill = ifelse(is.na(rate),'No data',paste0(type,', ',year))) |>
   mutate(color = ifelse(is.na(rate),'white',ifelse(type == 'Refugees', unicef_colors_bin[1],findcolor(as.numeric(year)))))
 
-fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = color, label = round(rate,1)))+
-    geom_bar(stat = 'identity',position = 'dodge', alpha = 0.7)+
-    geom_text(size = 3, position = position_dodge(width = 1),vjust = 0)+
-    blank_theme +
-    labs(title = 'School enrollment rates of refugees and national population by education level',
-         subtitle = paste0(name_of_country,', ', 'Pre-primary, primary and secondary, latest data available' ),
-         fill = NULL)+
-    ylab('Per cent')+
-    scale_fill_manual(labels = c('No data','Refugees',data_enrlmnt_cmpr |> filter(type == 'Population' & !is.na(rate)) |> distinct(fill) |> pull()),
-                      values = c('white',unicef_colors_bin[1],data_enrlmnt_cmpr |> filter(type == 'Population'& !is.na(rate)) |> distinct(color) |> pull()),
-                      limits = c('white',unicef_colors_bin[1],data_enrlmnt_cmpr |> filter(type == 'Population' & !is.na(rate)) |> distinct(color) |> pull()),
-                      guide = "legend",drop = FALSE)+
-    theme(plot.title = element_text(size=10,face="bold"),
-          plot.subtitle = element_text(size = 9),
-          legend.key = element_rect(fill = NA, color = unicef_colors[11]))
-  
-  fig_enrlmnt_cmpr
+fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = color, label = paste0(round(rate,1),"%")))+
+  geom_bar(stat = 'identity',position = 'dodge', alpha = 0.7)+
+  geom_text(size = 3, position = position_dodge(width = 1),vjust = 0)+
+  blank_theme +
+  labs(title = 'School enrollment rates of refugees and national population by education level',
+       subtitle = paste0(name_of_country,', latest data available' ),
+       fill = NULL)+
+  ylab('Per cent')+
+  scale_fill_manual(labels = c('No data','Refugees',data_enrlmnt_cmpr |> filter(type == 'Population' & !is.na(rate)) |> distinct(fill) |> pull()),
+                    values = c('white',unicef_colors_bin[1],data_enrlmnt_cmpr |> filter(type == 'Population'& !is.na(rate)) |> distinct(color) |> pull()),
+                    limits = c('white',unicef_colors_bin[1],data_enrlmnt_cmpr |> filter(type == 'Population' & !is.na(rate)) |> distinct(color) |> pull()),
+                    guide = "legend",drop = FALSE)+
+  theme(plot.title = element_text(size=10,face="bold"),
+        plot.subtitle = element_text(size = 9),
+        legend.key = element_rect(fill = NA, color = unicef_colors[11]),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
+
+fig_enrlmnt_cmpr
 ```
 
 <font size = 1>***Source:***</font>
@@ -1151,30 +1127,49 @@ fig_chart2 <-ggplot(data_chart2, aes(x = year,y = population, fill = `age group`
   blank_theme+
   theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"))
 
+#Age pyramids figure
+
 pop.male <- wpp.age.group.male |> filter(iso3 == country, year == 2022) |> pull(poptotal.thsd) *1000
 pop.female <- wpp.age.group.female |> filter(iso3 == country, year == 2022) |> pull(poptotal.thsd) *1000
 
-
-age_pyramid_female <- wpp.5y.age.group.female |> filter(area.id == id_of_country, year %in% c(2022,2050)) |> select(year,5:25) |>
+age_pyramid_female <- wpp.5y.age.group.female |> 
+  filter(area.id == id_of_country, year %in% c(2022,2050)) |>
+  select(year,5:25) |>
   mutate(pop75plus.thsd = pop75to79.thsd+pop80to84.thsd+pop85to89.thsd+pop90to94.thsd+pop95to99.thsd+pop100plus.thsd) |>
-  select(1:15, pop75plus.thsd) |> gather(key = 'age.group', value = 'pop',-1) |> mutate(age.group = str_replace(age.group,'pop','')) |>
-  mutate(age.group = str_replace(age.group,'.thsd',''),age.group = str_replace(age.group,'to',' to '), pop = pop*1000, sex = 'female') |> select(age.group,pop,sex,year)
+  select(1:15, pop75plus.thsd) |> 
+  gather(key = 'age.group', value = 'pop',-1) |> 
+  mutate(age.group = str_replace(age.group,'pop',''),
+         age.group = str_replace(age.group,'.thsd',''),
+         age.group = str_replace(age.group,'to','-'),
+         age.group = str_replace(age.group,'plus','+'),
+         pop = pop*1000, sex = 'Female') |>
+  select(age.group,pop,sex,year)
 
-age_pyramid_male <- wpp.5y.age.group.male |> filter(area.id == id_of_country, year %in% c(2022,2050)) |> select(year,5:25) |>
+age_pyramid_male <- wpp.5y.age.group.male |>
+  filter(area.id == id_of_country, year %in% c(2022,2050)) |> 
+  select(year,5:25) |>
   mutate(pop75plus.thsd = pop75to79.thsd+pop80to84.thsd+pop85to89.thsd+pop90to94.thsd+pop95to99.thsd+pop100plus.thsd) |>
-  select(1:15, pop75plus.thsd) |> gather(key = 'age.group', value = 'pop',-1) |> mutate(age.group = str_replace(age.group,'pop','')) |>
-  mutate(age.group = str_replace(age.group,'.thsd',''), age.group = str_replace(age.group,'to',' to '),pop = pop*1000, sex = 'male') |> select(age.group,pop,sex,year)
+  select(1:15, pop75plus.thsd) |> 
+  gather(key = 'age.group', value = 'pop',-1) |> 
+    mutate(age.group = str_replace(age.group,'pop',''),
+         age.group = str_replace(age.group,'.thsd',''),
+         age.group = str_replace(age.group,'to','-'),
+         age.group = str_replace(age.group,'plus','+'),
+         pop = pop*1000, sex = 'Male') |>
+  select(age.group,pop,sex,year)
 
-data_chart3 <-  bind_rows(age_pyramid_female,age_pyramid_male) |> group_by(year) |> mutate(pct = pop/sum(pop), age.group = factor(age.group,level = unique(age.group)))
+data_chart3 <-  bind_rows(age_pyramid_female,age_pyramid_male) |>
+  group_by(year) |> 
+  mutate(pct = pop/sum(pop), age.group = factor(age.group,level = unique(age.group)))
 
 
-colors <- c('female' = unicef_colors_bin[1], 'male' = unicef_colors_bin[2])
+colors <- c('Female' = unicef_colors_bin[1], 'Male' = unicef_colors_bin[2])
 
 fig_chart3 <- ggplot(data=data_chart3,aes(x= age.group, y = pct)) +
-  geom_bar(data= data_chart3 |> filter(sex == 'female', year == 2022),aes(fill = 'female'), stat = 'identity',alpha = 0.4) +
-  geom_bar(data= data_chart3 |> filter(sex == 'male', year == 2022), aes(y = pct * -1, fill = 'male'), stat = 'identity', alpha = 0.4) +
-  geom_bar(data= data_chart3 |> filter(sex == 'female', year == 2050), aes(color = 'female'), stat = 'identity', alpha = 0) +
-  geom_bar(data= data_chart3 |> filter(sex == 'male', year == 2050), aes(y = pct * -1, color = 'male'), stat = 'identity', alpha = 0) +
+  geom_bar(data= data_chart3 |> filter(sex == 'Female', year == 2022),aes(fill = 'Female'), stat = 'identity',alpha = 0.4) +
+  geom_bar(data= data_chart3 |> filter(sex == 'Male', year == 2022), aes(y = pct * -1, fill = 'Male'), stat = 'identity', alpha = 0.4) +
+  geom_bar(data= data_chart3 |> filter(sex == 'Female', year == 2050), aes(color = 'Female'), stat = 'identity', alpha = 0) +
+  geom_bar(data= data_chart3 |> filter(sex == 'Male', year == 2050), aes(y = pct * -1, color = 'Male'), stat = 'identity', alpha = 0) +
   scale_y_continuous(breaks=seq(-0.08,0.08,0.02),labels=paste0(abs(seq(-8,8,2)),'%')) +
   scale_fill_manual(values = colors)+
   scale_color_manual(values = colors)+

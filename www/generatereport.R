@@ -213,6 +213,36 @@ wb.remittance.pct <- wb_data("BX.TRF.PWKR.DT.GD.ZS", country = 'all',start_date 
 
 
 
+############### Helper functions and variables ###############
+
+addUnits <- function(n) {
+  labels <- ifelse(n < 1000, n,  # less than thousands
+                   ifelse(n < 1e6, paste0(round(n/1e3), 'k'),  # in thousands
+                          ifelse(n < 1e9, paste0(round(n/1e6,1), 'M'),  # in millions
+                                 ifelse(n < 1e12, paste0(round(n/1e9,1), 'B'), # in billions
+                                        ifelse(n < 1e15, paste0(round(n/1e12), 'T'), # in trillions
+                                               'too big!'
+                                        )))))
+  return(labels)
+}
+
+#Color palettes
+#UNICEF blue and secondary colors
+unicef_colors <- c("#1CABE2", "#00833D", "#80BD41", 
+                   "#FFC20E", "#F26A21", "#E2231A",
+                   "#961A49", "#6A1E74", "#D8D1C9", 
+                   "#777779", "#2D2926", "#374EA2")
+
+#bin UNICEF cyan - UNICEF cyan (20%)
+unicef_colors_bin <- c("#1CABE2", "#d2eef9")
+
+# Age group labels
+age.group <- c("0to4", "5to9", "10to14", "15to19", "20to24", "25to29", "30to34","35to39" ,"40to44" ,"45to49", "50to54", "55to59" ,"60to64", "65to69", "70to74" ,"75plus", "total" )
+age.group.labels <- c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34","35-39" ,"40-44" ,"45-49", "50-54", "55-59" ,"60-64", "65-69", "70-74" ,"75+", "Total" )
+age.group.labels <- tibble(age.group=factor(age.group, levels = age.group),
+                           age.group.label=factor(age.group.labels, levels=age.group.labels))
+
+
 ############### Render profile ###############
 
 # render_report = function(country) {
