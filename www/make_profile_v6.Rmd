@@ -49,7 +49,7 @@ id_of_country <- mig.stock |> filter(iso3 == country) |> pull(area.id) |> unique
 sub_of_country <- mig.stock |> filter(iso3 == country) |> pull(subregion) |> unique()
 sub_of_country <- ifelse(is.na(sub_of_country),'Northern America',sub_of_country)
 name_of_country <- mig.stock |> filter(iso3 == country) |> pull(area) |> unique()
-top_n_immi <- 3  #number of top inmigration countries
+top_n_immi <- 3  #number of top immigration countries
 top_n_emi <- 3 #number of top emigration countries
 
 blank_theme <- theme_minimal()+
@@ -63,12 +63,10 @@ blank_theme <- theme_minimal()+
 write_years<- 10
 carry_data <- function(x) ave(x, cumsum(!is.na(x)), FUN = function(i){ i[1:pmin(length(i), write_years+1)] <- i[1]; i }) # function to carry forward data for specific years
 
-
 country.wpp.sub.id <- wpp.location |> filter(iso3 == country) |> pull(subregion.id)
 country.wpp.sub <- wpp.location |> filter(iso3 == country) |> pull(subregion)
 country.wpp.insub <- wpp.location |> filter(subregion == country.wpp.sub) |> pull(iso3)
 country.wpp.name <- wpp.location |>filter(iso3 == country) |> pull(area)
-
 
 ```  
 
@@ -956,46 +954,6 @@ if(data3 |> distinct(pop.type) |> nrow() == 2){
 fig3
 ```
 
-
-
-### IOM DTM operation data on internal displacements (Prospect countries only)
-<font size = 1><em>_The Displacement Tracking Matrix (DTM) gathers and analyzes data to disseminate critical multilayered information on the mobility, vulnerabilities, and needs of displaced and mobile populations that enables decision makers and responders to provide these populations with better context specific assistance. This section is generated from IOM's DTM and contains the latest internal displacement data available. _</em></font>
-
-```{r,fig.align = "center",out.width="100%", eval=FALSE}
-if(country.wpp.name %in% prospect_country){
-  library(scatterpie)
-  dt_iom_op <- read.xlsx(file = "../data/06_iom-dtm-dataset-kenya_round-1_20150530_public_0_0.xlsx", sheetIndex = 1) |> filter(!is.na(SSID))
-  dt_iom_op <- dt_iom_op |> group_by(Nameof.Location, Longitude.X,Latitude.Y) |>
-    mutate(X2.1.b.1.Total.Number.of.IDP.Individuals = as.numeric(X2.1.b.1.Total.Number.of.IDP.Individuals)) |>
-    summarise(pop_total = sum(X2.1.b.1.Total.Number.of.IDP.Individuals, .groups='drop'), pop_conf = sum(X2.1.b.1.Total.Number.of.IDP.Individuals[X1.5.e.1...Reason.for.displacement. == 'Clashes']),
-  dt_iom_op <- dt_iom_op |>   rename('Location' = 1, 'lat' = 2, 'long' = 3) |>
-    mutate(long = as.numeric(long), lat = as.numeric(lat))
-  
-  map_ctry <-  world.un.df |> filter(ISO3_CODE == country)
-  
-  ggplot() + geom_polygon(data = map_ctry , aes(long,lat,group = group),fill = 'grey97', color="grey97")+
-    geom_scatterpie(data = dt_iom_op,
-                    aes(long, lat, r = sqrt(pop_total)/200),
-                    cols = c("pop_conf", "pop_disaster"),
-                    alpha = 0.8, color = NA) +
-    geom_scatterpie_legend(radius = sqrt(c(1000,3000,8000))/200,y = -3,x = 35, n = 3, labeller = function(x) paste0(round((x*200)^2),'')  )+
-    scale_fill_manual(breaks = c("pop_conf", "pop_disaster"),
-                      labels = c('Conflict related','Disaster related'),
-                      values = c(unicef_colors[1],unicef_colors[2])) +
-    labs(title = "IOM operational data on IDPs by reason of displacement",
-         subtitle = 'Kenya, 2015', fill = NULL) +
-    coord_fixed() +
-    theme_bw() +
-    guides(lty = "none") +
-    theme(legend.position = 'bottom',
-          legend.justification = c(1, 0),
-          panel.grid = element_blank(),
-          panel.border = element_blank(),
-          axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank())
-}
-```
 
 
 ### Remittances 
