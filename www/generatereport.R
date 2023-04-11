@@ -289,9 +289,11 @@ prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
 
 
 #list of countries to generate reports
+#all countries
+#ctry_list <- all_ctry
 
-ctry_list <- 'KEN'
-#ctry_list <- 'USA'
+#selected countries
+ctry_list <- 'TON'
 
 for(i in ctry_list){
   render_report_try(i)
