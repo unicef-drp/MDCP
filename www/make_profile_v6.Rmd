@@ -202,7 +202,8 @@ ref.df <- unhcr.gt.tab12.new |>mutate(area.id = ifelse(area.unhcr == 'World',900
                       filter(`Population type1` == 'Refugees', wpp.subregion == country.wpp.sub) |>
                       mutate(coverage = (Total- `Undefined/ unknown`)/Total) |> 
                       mutate(pop.camp = ifelse(coverage >= 0.5,`Planned/ managed camp`+`Collective center`+`Self-settled camp`+`Reception/ transit camp`,NA) ) |>
-                      mutate(prop.camp = pop.camp/(Total-`Undefined/ unknown`)) |> summarise(Total_sub = sum(Total,na.rm = T),prop.camp_sub = weighted.mean(prop.camp,Total,na.rm =T)*100)|>
+                      mutate(prop.camp = pop.camp/(Total-`Undefined/ unknown`)) |> 
+                      summarise(Total_sub = sum(Total,na.rm = T),prop.camp_sub = weighted.mean(prop.camp,Total,na.rm =T)*100, .groups='drop')|>
                       mutate(pop.camp.est = Total_sub*prop.camp_sub/100) |>
                       select('Refugees living in camps (thousand)' = pop.camp.est,'Share of refugees living in camps (%)' = prop.camp_sub) |>
                       mutate( year = paste0(2021,' ',country.wpp.sub))) |>
@@ -259,7 +260,7 @@ idp.df <- idmc.conf.dis.2021 |>
                      'Internally displaced persons (IDPs) in school age (5-17) (thousand)' = sum(idp.total.schoolage,na.rm =T) ,
                      'Share of Internally displaced persons (IDPs) due to conflict and violence (%)' = weighted.mean(prop.conf,idp.total,na.rm = T) ,
                      'New internal displacements (thousand)' = sum(idp.total.new,na.rm = T), 
-                     'Share of new internal displacements due to conflict and violence (%)' = weighted.mean(prop.conf.new,idp.total.new,na.rm = T)) |>
+                     'Share of new internal displacements due to conflict and violence (%)' = weighted.mean(prop.conf.new,idp.total.new,na.rm = T), .groups='drop') |>
           mutate(year = '2021 WORLD')) |> 
   mutate_at(vars(contains('thousand')),~round(./1000,1)) 
 
@@ -488,8 +489,7 @@ data1 <- mig.stock.orig.dest |> ungroup() |>
   filter(!is.na(dest) & !is.na(orig))|>
   filter(dest == country | orig == country) |>
   group_by(orig,dest)|>
-  summarise(pop = sum(pop.mig,na.rm = T)/1000)|>
-  ungroup() |>
+  summarise(pop = sum(pop.mig,na.rm = T)/1000, .groups='drop')|>
   mutate(orig = factor(orig,levels = c(concerned_ctries,names(areas_elaborate),'Other')))|>
   arrange(orig) |> left_join(wpp.location |> select(iso3,orig.area = area), by = c('orig' = 'iso3')) |>
   left_join(wpp.location |> select(iso3,dest.area = area), by = c('dest' = 'iso3')) |> 
@@ -602,7 +602,14 @@ dt_mmg_ctr <- dt_missing |>
   summarise(pop = sum(`Number Dead`), .groups='drop')
 
 if(nrow(dt_mmg_ctr) == 0){
-  print(paste0('Temporarily no data for ', name_of_country,' from Missing Migrant Project.'))
+  #print(paste0('Temporarily no data for ', name_of_country,' from Missing Migrant Project.'))
+  ggplot() +                      # Draw ggplot2 plot with text only
+  annotate("text",
+           x = 1,
+           y = 1,
+           size = 7,
+           label = paste0('Temporarily no data for ', name_of_country,'\nfrom Missing Migrant Project.')) + 
+  theme_void()
 }else{
   fig.mmg <- ggplot(data =dt_mmg_ctr, aes(x = Year, y = pop, fill = `Cause of Death`)) + 
     geom_bar(stat = 'identity', position = 'stack', alpha = 0.8) +
@@ -791,23 +798,30 @@ Mobile cellular coverage is important in digital connectivity as it allows peopl
 ```{r}
 if(country.wpp.name %in% dcr.ctry.ref$country){
   country.unhcr.sub <- dcr.ctry.ref |> filter(country == country.wpp.name) |> pull(unhcr.subregion)
-
-colnames(dcr.df) <- c('area', 'pct.nocov','pct.2g','pct.3g+')
-
-
-dt10 <- dcr.df |> filter(area %in% c(country.wpp.name, country.unhcr.sub, 'WORLD')) |> 
-  mutate(area = paste0('2014 ',area),pct.2gplus = 100- pct.nocov) |>
-  select(area, "Percentage of refugees living in areas with mobile cellular coverage (at least 2G) (%)" = pct.2gplus) |>
-  pivot_longer(-area) |>
-  pivot_wider(names_from=area, values_from=value) |> rename(Indicator = name, '2014 World' = `2014 WORLD`)
-
-kable(dt10, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm')
+  
+  colnames(dcr.df) <- c('area', 'pct.nocov','pct.2g','pct.3g+')
+  
+  dt10 <- dcr.df |> filter(area %in% c(country.wpp.name, country.unhcr.sub, 'WORLD')) |> 
+    mutate(area = paste0('2014 ',area),pct.2gplus = 100- pct.nocov) |>
+    select(area, "Percentage of refugees living in areas with mobile cellular coverage (at least 2G) (%)" = pct.2gplus) |>
+    pivot_longer(-area) |>
+    pivot_wider(names_from=area, values_from=value) |> 
+    rename(Indicator = name, '2014 World' = `2014 WORLD`)
+  
+  kable(dt10, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
+    column_spec(1, bold = T, border_right = T,width = '12cm')
 } else {
-  print(paste0('Temporarily no data for ',name_of_country,' in UNHCR report.'))
+  ggplot() +                      # Draw ggplot2 plot with text only
+    annotate("text",
+             x = 1,
+             y = 1,
+             size = 7,
+             label = paste0(paste0('Temporarily no data for ', name_of_country,'\nin UNHCR report.'))) + 
+               theme_void()
 }
 
 ```
+
 <font size = 1><em>***Source:*** UNCHR, 2016. Connecting Refugees, https://www.unhcr.org/publications/operations/5770d43c4/connecting-refugees.html.</em></font>
 
 ### Internally displaced persons
@@ -846,7 +860,7 @@ if(nrow(data.idp) == 0){
   annotate("text",
            x = 1,
            y = 1,
-           size = 8,
+           size = 7,
            label = paste0('Temporarily no data for ',name_of_country,' from IDMC.')) + 
   theme_void()
 }else{
