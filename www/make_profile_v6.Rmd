@@ -136,8 +136,6 @@ pop.df <- wpp.age.group |> filter((year %in% c(2000,2022,2050) & iso3 == country
 
 
 ```{r, message=F}
-ref.school <- read_xlsx(file.path(input.unhcr,'Data Analysis 2019.xlsx'),sheet = 1, skip = 2, range = 'a3:ay15')
-
 
 #######################################
 areas <- wpp.location |> filter(!is.na(region)) |> distinct(region) |> pull(region)
@@ -289,18 +287,42 @@ wb.remittance.df <- wb.remittance.df |>
 
 
 ########################################
+ref.school <- read_xlsx(file.path(input.unhcr,'Data Analysis 2019.xlsx'),sheet = 1, skip = 2, range = 'a3:ay15')
+
 ref.uis.ctry <- ref.school |> filter(COUNTRIES == country.wpp.name)
 if(nrow(ref.uis.ctry)!= 0){
-  ref.uis.df <- data.frame(year = paste0('2019 ', country.wpp.name), 'GROSS ENROLMENT, Pre-primary' = ref.uis.ctry |> pull('T...15'),'GROSS ENROLMENT, Primary' = ref.uis.ctry |> pull('T...18'),'GROSS ENROLMENT, Secondary' = ref.uis.ctry |> pull('T...21'), 'GROSS ENROLMENT RATE, Pre-primary' =  ref.uis.ctry |> pull('T...33')*100,'GROSS ENROLMENT RATE, Primary' =  ref.uis.ctry |> pull('T...36')*100,'GROSS ENROLMENT RATE, Secondary' =  ref.uis.ctry |> pull('T...39')*100)
-  colnames(ref.uis.df) <- c('year','Gross enrollment (pre-primary)','Gross enrollment (primary)','Gross enrollment (secondary)','Gross enrollment rate (pre-primary) (%)',
-                            'Gross enrollment rate (primary) (%)', 'Gross enrollment rate (secondary) (%)')
+  ref.uis.df <- data.frame(year = paste0('2019 ', country.wpp.name), 
+                           'GROSS ENROLMENT, Pre-primary' = ref.uis.ctry |> pull('T...15'),
+                           'GROSS ENROLMENT, Primary' = ref.uis.ctry |> pull('T...18'),
+                           'GROSS ENROLMENT, Secondary' = ref.uis.ctry |> pull('T...21'),
+                           'GROSS ENROLMENT RATE, Pre-primary' =  ref.uis.ctry |> pull('T...33')*100,
+                           'GROSS ENROLMENT RATE, Primary' =  ref.uis.ctry |> pull('T...36')*100,
+                           'GROSS ENROLMENT RATE, Secondary' =  ref.uis.ctry |> pull('T...39')*100)
+  
+  colnames(ref.uis.df) <- c('year',
+                            'Gross enrollment (pre-primary)',
+                            'Gross enrollment (primary)',
+                            'Gross enrollment (secondary)',
+                            'Gross enrollment rate (pre-primary) (%)',
+                            'Gross enrollment rate (primary) (%)',
+                            'Gross enrollment rate (secondary) (%)')
 } else {
-  ref.uis.df <- data.frame(year = paste0('2019 ', country.wpp.name), 'GROSS ENROLMENT, Pre-primary' = NA,'GROSS ENROLMENT, Primary' = NA ,'GROSS ENROLMENT, Secondary' = NA,
-                           'GROSS ENROLMENT RATE, Pre-primary' =  NA,'GROSS ENROLMENT RATE, Primary' =  NA,'GROSS ENROLMENT RATE, Secondary' =  NA)
-  colnames(ref.uis.df) <- c('year','Gross enrollment (pre-primary)','Gross enrollment (primary)','Gross enrollment (secondary)','Gross enrollment rate (pre-primary) (%)',
-                            'Gross enrollment rate (primary) (%)', 'Gross enrollment rate (secondary) (%)')
+  ref.uis.df <- data.frame(year = paste0('2019 ', country.wpp.name), 
+                           'GROSS ENROLMENT, Pre-primary' = NA,
+                           'GROSS ENROLMENT, Primary' = NA ,
+                           'GROSS ENROLMENT, Secondary' = NA,
+                           'GROSS ENROLMENT RATE, Pre-primary' =  NA,
+                           'GROSS ENROLMENT RATE, Primary' =  NA,
+                           'GROSS ENROLMENT RATE, Secondary' =  NA)
+  
+  colnames(ref.uis.df) <- c('year',
+                            'Gross enrollment (pre-primary)',
+                            'Gross enrollment (primary)',
+                            'Gross enrollment (secondary)',
+                            'Gross enrollment rate (pre-primary) (%)',
+                            'Gross enrollment rate (primary) (%)',
+                            'Gross enrollment rate (secondary) (%)')
 }
-
 
 ########################################
 
@@ -655,7 +677,7 @@ kable(dt_disp_2021[c(1:9),], align = c('l',rep('r',3))) |> kable_classic(full_wi
 
 ### UNRWA Registered Refugees (2021) 
 
-UNRWA registered Palestine Refugees are persons whose normal place of residence was Palestine during the period 1 June 1946 to 15 May 1948, and who lost both home and means of livelihood as a result of the 1948 conflict. Palestine Refugees, and descendants of Palestine refugee males, including legally adopted children, are eligible to register for UNRWA services.
+UNRWA registered **Palestine Refugees** are persons whose normal place of residence was Palestine during the period 1 June 1946 to 15 May 1948, and who lost both home and means of livelihood as a result of the 1948 conflict. Palestine Refugees, and descendants of Palestine refugee males, including legally adopted children, are eligible to register for UNRWA services.
 
 The data shown here does not include other UNRWA persons of concern, such as Non-Refugee Wives, Non-Refugee Husbands, Non-Refugee Children, Frontier Villages, Jerusalem Poor, Gaza Poor and Compromise cases
 
@@ -676,7 +698,7 @@ if(country %in% c('JOR','SYR','LBN','PSE')){
     
   }
   
-  dt <- data.frame('Indicator'=c('UNRWA registered refugees (thousand)', 'UNRWA registered refugees under age 18 (thousand)'), 
+  dt <- data.frame('Indicator'=c('Palestine Refugees (thousand)', 'Palestine Refugees under age 18 (thousand)'), 
                    '2021' = c(unrwa.ref.ctry$pop[unrwa.ref.ctry$age=="all"], unrwa.ref.ctry$pop[unrwa.ref.ctry$age=="0to17"]),
                    '2021' =  c(unrwa.ref.world$pop[unrwa.ref.ctry$age=="all"], unrwa.ref.world$pop[unrwa.ref.ctry$age=="0to17"])) |> 
     mutate_if(is.numeric, ~format( round(.),big.mark = ' '))
@@ -698,9 +720,6 @@ if(country %in% c('JOR','SYR','LBN','PSE')){
 #### UNHCR data on education 
 
 UNHCR has annual report on enrollment of refugees in education. Measuring school enrollment for refugee children is important to understand: access to education, integration, future opportunities and social and economic development of individuals and communities.
-
-
-The data and chart will be shown if there are data for selected country.  
 
 ```{r}
 kable(dt_disp_2019[c(1:6),], align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>

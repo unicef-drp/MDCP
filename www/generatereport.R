@@ -140,78 +140,6 @@ wb.remittance.us <- wb_data("BX.TRF.PWKR.CD.DT", country = 'all',start_date = 20
 wb.remittance.pct <- wb_data("BX.TRF.PWKR.DT.GD.ZS", country = 'all',start_date = 2021,end_date = 2021)  |> 
   select(`Country Name` = country,`Country Code` = iso3c, rem.pct = BX.TRF.PWKR.DT.GD.ZS)
 
-############### Map layers #################
-
-# library(terra)
-# map.dir <- file.path(path.basic,'Data/unmap') 
-# 
-# color.palette <- "Reds" # colors for polygons with data
-# 
-# NoDataColor <- "grey97" # color for polygons with no data
-# boundary.color <- "grey" # color for country boundaries
-# background.color <- "grey97" # color for oceans, seas and lakes
-# 
-# # Disclaimer text 
-# disclaimer.text <- "The boundaries and names shown and the designations used on this map do not imply official endorsement or acceptance by the United Nations.
-# Dotted line represents approximately the Line of Control in Jammu and Kashmir agreed upon by India and Pakistan. The final status of Jammu and Kashmir
-# has not yet been agreed upon by the parties. Final boundary between the Republic of Sudan and the Republic of South Sudan has not yet been determined."
-# 
-# # Plot variables 
-# plot.coastlines <- FALSE # outline the coastlines with the same color as country boundaries? (TRUE or FALSE)
-# plot.lakes <- TRUE # show lakes polygons for the 21 large lakes (TRUE or FALSE)
-# plot.antarctica <- FALSE # show antarctica polygon (TRUE or FALSE)
-# 
-# # Read in UN shapefiles 
-# # Read in the UN cartography polygon shapefile (no antarctica)
-# world.un <- vect(file.path(map.dir, "un-world-2012-no-antartica-10pct.shp"))
-# 
-# # Read in the Un Cartography shapefile with country/area boundaries
-# bnd.un <- vect(map.dir, "2012_UNGIWG_bnd_ln_01", crs="epsg:4326")
-# # convert to Robinson projection
-# crs(bnd.un) <- "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-# 
-# # Read in the Un Cartography shapefile with coastlines
-# cst.un <- vect(map.dir, "2012_UNGIWG_cst_ln_01")
-# # convert to Robinson projection
-# crs(cst.un) <- "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs "
-# crop(cst.un, bnd.un) #removing antarctica
-# 
-# # Read in the Un Cartography shapefile with lakes
-# lks.un <- vect(map.dir, "2012_UNGIWG_lks_ply_01")
-# # convert to Robinson projection
-# crs(lks.un) <- "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs "
-# 
-# 
-# # Read in the Un Cartography shapefile with Antarctica
-# wld.un <- vect(map.dir, "un-world-2012-65pct")
-# ant.un <- wld.un[wld.un$TERR_NAME=="Antarctica",]
-# crs(ant.un) <- "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs "
-# 
-# 
-# world.un@data$id <- as.integer(rownames(world.un@data))+1
-# 
-# world.un.df <- data.frame()
-# for(i in 1:length(world.un)){
-#   new.df <- fortify(world.un[world.un$id == i,]) |> 
-#     mutate(id = i)
-#   world.un.df <- rbind(world.un.df, new.df)
-# }
-# world.un.df <- left_join(world.un.df, select(world.un@data,id,ISO3_CODE),by = 'id')
-# 
-# bnd@data$id <- as.integer(rownames(bnd@data))+1
-# 
-# bnd.df <- data.frame()
-# for(i in 1:length(bnd)){
-#   new.df <- fortify(bnd[bnd$id == i,]) |> mutate(id = i)
-#   bnd.df <- rbind(bnd.df, new.df)
-# }
-# bnd.df <- left_join(bnd.df, select(bnd@data,id,CARTOGRAPH),by = 'id') |> 
-#   mutate(CARTOGRAPH = recode(CARTOGRAPH, 'International boundary line' = 'line', 
-#                              "Dashed boundary line" = 'dashed', "Undetermined international dashed boundary line" = 'dashed',
-#                              "Dotted boundary line" = 'dotted',"Dotted boundary line (Abyei)" ='dotted', .default = NA_character_)) |>
-#   filter(!is.na(CARTOGRAPH ))
-
-
 
 ############### Helper functions and variables ###############
 
@@ -290,10 +218,10 @@ prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
 
 #list of countries to generate reports
 #all countries
-#ctry_list <- all_ctry
+ctry_list <- all_ctry
 
 #selected countries
-ctry_list <- 'TON'
+#ctry_list <- 'LBN'
 
 for(i in ctry_list){
   render_report_try(i)
