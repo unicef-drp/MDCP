@@ -635,14 +635,12 @@ if(nrow(dt_mmg_ctr) == 0){
 
 
 ### Refugees 
-**Refugees** are persons who are unable or unwilling to return to their country of origin owing to a well-founded fear of being persecuted for reasons of race, religion, nationality, membership of a particular social group, or political opinion.
+**Refugees** are persons who are unable or unwilling to return to their country of origin owing to a well-founded fear of being persecuted for reasons of race, religion, nationality, membership of a particular social group, or political opinion ([1951 Refugee Convention](https://www.unhcr.org/3b66c2aa10.html)).
 
 Refugees are people who have fled war, violence, conflict or persecution and have crossed an international border to find safety in another country.
 
 The term refugee excludes asylum-seekers: persons who have left their country and are seeking protection from persecution and serious human rights violations in another country, but who haven't yet been legally recognized as refugees and are waiting to receive a decision on their asylum claim. 
 
-<br/>
-2. [https://www.unhcr.org/3b66c2aa10.html](https://www.unhcr.org/3b66c2aa10.html)
 
 ```{r}
 kable(dt_disp_2021[c(1:9),], align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
@@ -650,6 +648,54 @@ kable(dt_disp_2021[c(1:9),], align = c('l',rep('r',3))) |> kable_classic(full_wi
   row_spec(1:9) |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```  
+
+
+
+`r if(country %in% c('JOR','SYR','LBN','PSE')){"
+
+### UNRWA Registered Refugees (2021) 
+
+UNRWA registered Palestine Refugees are persons whose normal place of residence was Palestine during the period 1 June 1946 to 15 May 1948, and who lost both home and means of livelihood as a result of the 1948 conflict. Palestine Refugees, and descendants of Palestine refugee males, including legally adopted children, are eligible to register for UNRWA services.
+
+The data shown here does not include other UNRWA persons of concern, such as Non-Refugee Wives, Non-Refugee Husbands, Non-Refugee Children, Frontier Villages, Jerusalem Poor, Gaza Poor and Compromise cases
+
+"}`
+
+```{r}
+if(country %in% c('JOR','SYR','LBN','PSE')){
+  unrwa.ref.world <- df.unrwa.all.2021 |> filter(year == 2021,name == 'total') |> select(age, pop) |> mutate(pop=pop/1000)
+  
+  if(country == 'PSE'){  #to combine West Bank and Gaza
+  
+      unrwa.ref.ctry <- df.unrwa.all.2021 |> filter(year == 2021, iso3 == 'PSE') |>
+      group_by(age) |> 
+      summarise(pop = sum(pop), .groups='drop') |> select(age, pop)|> mutate(pop=pop/1000)
+   
+  } else {
+    unrwa.ref.ctry <- df.unrwa.all.2021 |> filter(year == 2021, iso3 ==  country)  |> select(age, pop) |> mutate(pop=pop/1000)
+    
+  }
+  
+  dt <- data.frame('Indicator'=c('UNRWA registered refugees (thousand)', 'UNRWA registered refugees under age 18 (thousand)'), 
+                   '2021' = c(unrwa.ref.ctry$pop[unrwa.ref.ctry$age=="all"], unrwa.ref.ctry$pop[unrwa.ref.ctry$age=="0to17"]),
+                   '2021' =  c(unrwa.ref.world$pop[unrwa.ref.ctry$age=="all"], unrwa.ref.world$pop[unrwa.ref.ctry$age=="0to17"])) |> 
+    mutate_if(is.numeric, ~format( round(.),big.mark = ' '))
+  
+  names(dt) <- c('Indicator','2021','2021')
+  Header2 <- c(" " = 1, country.wpp.name = 1,'World' = 1)
+  names(Header2) <- c(" ", country.wpp.name,'World')
+  
+  #printing table
+  kable(dt, align = c('l',rep('r',2))) |> kable_classic(full_width = T) |>
+    column_spec(1, bold = T, border_right = T,width = '12cm') |>
+    add_header_above(Header2) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
+}
+
+```
+
+`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> ***Source*** UNRWA, 2022. UNRWA Registered Population Dashboard, https://www.unrwa.org/what-we-do/relief-and-social-services/unrwa-registered-population-dashboard </em></font>  "}`
+
+#### UNHCR data on education 
 
 UNHCR has annual report on enrollment of refugees in education. Measuring school enrollment for refugee children is important to understand: access to education, integration, future opportunities and social and economic development of individuals and communities.
 
@@ -662,40 +708,6 @@ kable(dt_disp_2019[c(1:6),], align = c('l',rep('r',3))) |> kable_classic(full_wi
   row_spec(1:6) |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```
-
-
-`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 5> Palestine Refugees* </em></font>   "}`
-```{r}
-if(country %in% c('JOR','SYR','LBN','PSE')){
-  unrwa.ref.world <- df.unrwa.0to17.2020 |> filter(year == 2020,name == 'total') |> select(pop) |> pull()/1000
-  if(country == 'PSE'){
-    unrwa.ref.ctry <- df.unrwa.0to17.2020 |> filter(year == 2020, iso3 == 'PSE') |>
-      group_by(age) |> 
-      summarise(pop = sum(pop), .groups='drop') |> select(pop) |> pull()/1000
-    dt <- data.frame('Indicator'=c('UNRWA refugees (thousand)', 'UNRWA refugees under age 18 (thousand)'), '2020' = rev(unrwa.ref.ctry),'2020' = rev(unrwa.ref.world)) |> mutate_if(is.numeric, ~format( round(.),big.mark = ' '))
-    names(dt) <- c('Indicator','2020','2020')
-
-    Header2 <- c(" " = 1, country.wpp.name = 1,'World' = 1)
-    names(Header2) <- c(" ", country.wpp.name,'World')
-    kable(dt, align = c('l',rep('r',2))) |> kable_classic(full_width = T) |>
-    column_spec(1, bold = T, border_right = T,width = '12cm') |>
-    add_header_above(Header2) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
-  } else {
-    unrwa.ref.ctry <- df.unrwa.0to17.2020 |> filter(year == 2020, iso3 ==  country)  |> select(pop) |> pull()/1000
-    dt <- data.frame('Indicator'=c('UNRWA refugees (thousand)', 'UNRWA refugees under age 18 (thousand)'), '2020' = rev(unrwa.ref.ctry),'2020' = rev(unrwa.ref.world)) |> mutate_if(is.numeric, ~format( round(.),big.mark = ' '))
-    names(dt) <- c('Indicator','2020','2020')
-
-    Header2 <- c(" " = 1, country.wpp.name = 1,'World' = 1)
-    names(Header2) <- c(" ", country.wpp.name,'World')
-    kable(dt, align = c('l',rep('r',2))) |> kable_classic(full_width = T) |>
-    column_spec(1, bold = T, border_right = T,width = '12cm') |>
-    add_header_above(Header2) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
-  }
-}
-
-```
-
-`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> _* Palestine refugees registered with UNRWA_ </em></font>  "}`
 
 
 ```{r, fig.align = "center", warning=FALSE}
@@ -751,45 +763,8 @@ fig_enrlmnt_cmpr
 <font size = 1><em>UNHCR, 2020. Coming Together For Refugee Education. Education Report 2020.</em></font>
 <font size = 1><em>UNESCO, Institute for Statistics, 2020. UIS database, http://data.uis.unesco.org.</em></font>
 
-### UNHCR Operational data (Prospect countries only)
-The Operational Data Portal (ODP) was created in 2011 to enable UNHCR’s institutional responsibility to provide an information and data sharing platform to facilitate coordination of refugee emergencies. This section is generated from UNHCR's ODP and contains the latest refugee data.  
 
-```{r}
-if(country.wpp.name %in% prospect_country){
-  dt_unhcr_op <- read.xlsx(file = "../data/Refugees in Kenya - Breakdown by country of origin.xlsx", sheetIndex = 1) |> filter(individuals != 0) |> select('Refugees in Kenya - Breakdown by country of origin (Feb 2022)' = pop_origin_name, 'Refugees' = individuals, 'Refugees under age 18' = children_total)
-
-
-kable(dt_unhcr_op, align = c('l',"r",'r')) |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm')  |>   row_spec( 0, extra_css = "border-top: 1px solid white")
-}
-```
-
-```{r,fig.align = "center",out.width="100%"}
-if(country.wpp.name %in% prospect_country){
-  dt_unhcr_op_plt <- dt_unhcr_op |> mutate(`Refugees adults` = Refugees-`Refugees under age 18`) |> gather(key = 'type', value = 'population',3:4) |> rename(area = 1, pop.total = 2)  |> group_by(area) |>
-  mutate(pct = ifelse(type != 'Refugees adults',paste0(round(100*population/sum(population),0),'%'),NA),  pop.total = ifelse(type == 'Refugees adults', pop.total,NA))
-
-ggplot(dt_unhcr_op_plt,aes(x = area |> reorder(population),y = population,fill = type))+
-  geom_bar(stat = 'identity',position = 'stack')+
-  geom_text(aes(label = pct), position = position_stack(vjust = 0.5),size = 3)+
-  geom_text(aes(y= population+ 10000,label=pop.total),stat='identity',position=position_stack(vjust = 1),size = 3)+
-  scale_fill_manual( labels = c("Adults (Age 18 and over)", "Children (under age 18)"), values =  c('#69DBFF','#0083CF'))+
-  coord_flip()+
-  theme(axis.line=element_blank(),
-        axis.text.x=element_blank(),
-        axis.text.y=element_text(size = 14),axis.ticks=element_blank(),
-        legend.position = c(0.65,0.25),
-        legend.title = element_blank(),
-        axis.title.y=element_blank(),
-        axis.title.x=element_blank(),
-        panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
-        panel.grid.minor=element_blank(),plot.background=element_blank())
-}
-```
-
-<font size = 1><em>***Source:*** UNCHR, 2022. Operational Data Portal, https://data2.unhcr.org/en/countries/. Accessed 2022.</em></font>
-
-### Digital connectivity among refugees
+#### UNHCR data on digital connectivity
 
 Mobile cellular coverage is important in digital connectivity as it allows people to stay connected, access information and services, and participate in the digital economy. In areas with limited or no mobile network coverage, people may face barriers to accessing critical services such as healthcare, education, and emergency services and participating in social, economic, and political activities.
 
@@ -814,7 +789,7 @@ if(country.wpp.name %in% dcr.ctry.ref$country){
              x = 1,
              y = 1,
              size = 7,
-             label = paste0(paste0('Temporarily no data for ', name_of_country,'\nin UNHCR report.'))) + 
+             label = paste0(paste0('Temporarily no data for ', name_of_country))) + 
                theme_void()
 }
 
@@ -852,6 +827,9 @@ data.idp <- idmc.conf.dis.2021 |> filter(year == 2021, iso3 == country) |>
   mutate(type = factor(type, levels = unique(as.character(type)))) |>
   mutate(disp.type = factor(disp.type, levels = c('Internally displaced persons', 'New displacements')))
 
+data.adet <- idmc.disaster.2021 %>% filter(iso3 == country) %>% mutate(start.date = as.Date(start.date))
+
+
 if(nrow(data.idp) == 0){
   #print(paste0('Temporarily no data for ',name_of_country,' from IDMC.'))
   ggplot() +                      # Draw ggplot2 plot with text only
@@ -881,11 +859,10 @@ if(nrow(data.idp) == 0){
           axis.title.x=element_blank(),
           panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
           panel.grid.minor=element_blank(),plot.background=element_blank(),aspect.ratio = 1)
-  fig.idp
   
   fig.adet <-  ggplot(data = data.adet, aes(x = start.date, y = idp.dis.new, size = idp.dis.new, color = hazard.cat)) +
     geom_point() +
-    scale_color_manual(name = NULL, labels = c('Geophysical','Weather-related'),values = unicef_colors)+
+    scale_color_manual(name = NULL, labels = c('Geophysical','Weather-related'),values = unicef_colors[2:6])+
     labs(title = "Number of IDPs from disaster events by hazard category",
          subtitle = paste0(country.wpp.name,", 2008-2021"),
          color = NULL,
@@ -896,7 +873,8 @@ if(nrow(data.idp) == 0){
 
     guides(size = "none")
 
-  fig.adet
+  print(fig.idp)
+  print(fig.adet)
   
 }
 

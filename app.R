@@ -89,7 +89,7 @@ server <-  function(input, output,session) {
   output$ctry_profile <- renderUI({
     req(ctry())
     
-    includeHTML('www/Report-AFG-test.html')
+    includeHTML('www/Report-AFG-test2.html')
   })
   
   
@@ -372,7 +372,7 @@ server <-  function(input, output,session) {
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
       
-      includeHTML(paste0('www/Report-',input$mymap1_shape_click$id,'-test.html'))
+      includeHTML(paste0('www/Report-',input$mymap1_shape_click$id,'-test2.html'))
     })
     
     
@@ -386,7 +386,7 @@ server <-  function(input, output,session) {
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
       
-      includeHTML(paste0('www/Report-',input$mymap2_shape_click$id,'-test.html'))
+      includeHTML(paste0('www/Report-',input$mymap2_shape_click$id,'-test2.html'))
     })
     
     
@@ -399,7 +399,7 @@ server <-  function(input, output,session) {
     
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
-      filename <- paste0('www/Report-',input$mymap3_shape_click$id,'-test.html')
+      filename <- paste0('www/Report-',input$mymap3_shape_click$id,'-test2.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
@@ -421,7 +421,7 @@ server <-  function(input, output,session) {
     
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
-      filename <- paste0('www/Report-',input$mymap4_shape_click$id,'-test.html')
+      filename <- paste0('www/Report-',input$mymap4_shape_click$id,'-test2.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
@@ -445,7 +445,7 @@ server <-  function(input, output,session) {
     
     output$ctry_profile <- renderUI({
       
-      filename <- paste0('www/Report-',iso3,'-test.html')
+      filename <- paste0('www/Report-',iso3,'-test2.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
@@ -463,7 +463,7 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-KEN-test.html')
+        includeHTML('www/Report-KEN-test2.html')
       })
     } 
     if(input$type_of_countries == 'blueprint'){
@@ -471,7 +471,7 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-BGD-test.html')
+        includeHTML('www/Report-BGD-test2.html')
       })
     } 
     if(input$type_of_countries == 'lostgen'){
@@ -479,7 +479,7 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-TUR-test.html')
+        includeHTML('www/Report-TUR-test2.html')
       })
     }
     if(input$type_of_countries == 'world'){
@@ -490,7 +490,7 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-AFG-test.html')
+        includeHTML('www/Report-AFG-test2.html')
       })
       
       
