@@ -4,7 +4,6 @@ library(tidyverse)
 library(rworldmap)
 library(shinyWidgets)
 
-
 note_map <- "Note: This map is stylized and not to scale and does not reflect 
 a position by UNICEF on the legal status of any country or territory or the delimitation 
 of any country or territory or the delimitation of any frontiers."
@@ -91,19 +90,14 @@ server <-  function(input, output,session) {
     
     includeHTML('www/Report-AFG-test2.html')
   })
-  
-  
   output$mymap1 <- leaflet::renderLeaflet({
     req(ctry())
-    
-    
+
     countries_selected <- prospect_countries
     
-    
-    
-    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = '<em>Prospects</em> Country: ')
-                                            , joinCode = "ISO3"
-                                            , nameJoinColumn = "ISO")
+    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = '<em>Prospects</em> Country: '),
+                                            joinCode = "ISO3",
+                                            nameJoinColumn = "ISO")
     
     
     map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
@@ -123,10 +117,9 @@ server <-  function(input, output,session) {
                   dashArray = "3",
                   fillOpacity = 0.7,
                   label = ~NAME,
-                  labelOptions = labelOptions(
-                    style = list("font-weight" = "normal", padding = "3px 8px"),
-                    textsize = "15px",
-                    direction = "auto"),
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
                   layerId = ~ISO3) |>
       addPolygons(data = map.other.ctry,
                   fillColor = '#69DBFF',
@@ -135,19 +128,16 @@ server <-  function(input, output,session) {
                   color = "grey",
                   dashArray = "3",
                   fillOpacity = 0.7,
-                  highlight = highlightOptions(
-                    weight = 5,
-                    color = '#0083CF',
-                    dashArray = "",
-                    fillOpacity = 0.5,
-                    bringToFront = TRUE),
+                  highlight = highlightOptions(weight = 5,
+                                               color = '#0083CF',
+                                               dashArray = "",
+                                               fillOpacity = 0.5,
+                                               bringToFront = TRUE),
                   label = ~NAME,
-                  labelOptions = labelOptions(
-                    style = list("font-weight" = "normal", padding = "3px 8px"),
-                    textsize = "15px",
-                    direction = "auto"),
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
                   layerId = ~ISO3)
-    
     
     return(mymap)
     
@@ -156,16 +146,11 @@ server <-  function(input, output,session) {
   output$mymap2 <- leaflet::renderLeaflet({
     req(ctry())
     
-    
-    
     countries_selected <- blueprint_countries
     
-    
-    
-    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = '<em>Blueprint</em> Country: ')
-                                            , joinCode = "ISO3"
-                                            , nameJoinColumn = "ISO")
-    
+    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = '<em>Blueprint</em> Country: '),
+                                            joinCode = "ISO3",
+                                            nameJoinColumn = "ISO")
     
     map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
     label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
@@ -244,8 +229,7 @@ server <-  function(input, output,session) {
                   dashArray = "3",
                   fillOpacity = 0.7,
                   label = ~NAME,
-                  labelOptions = labelOptions(
-                    style = list("font-weight" = "normal", padding = "3px 8px"),
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
                     direction = "auto"),
                   layerId = ~ISO3) |>
@@ -256,8 +240,7 @@ server <-  function(input, output,session) {
                   color = "grey",
                   dashArray = "3",
                   fillOpacity = 0.7,
-                  highlight = highlightOptions(
-                    weight = 5,
+                  highlight = highlightOptions(weight = 5,
                     color = '#0083CF',
                     dashArray = "",
                     fillOpacity = 0.5,
@@ -304,10 +287,9 @@ server <-  function(input, output,session) {
                     dashArray = "3",
                     fillOpacity = 0.7,
                     label = ~NAME,
-                    labelOptions = labelOptions(
-                      style = list("font-weight" = "normal", padding = "3px 8px"),
-                      textsize = "15px",
-                      direction = "auto"),
+                    labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                                textsize = "15px",
+                                                direction = "auto"),
                     layerId = ~ISO3) |>
         addPolygons(data = map.other.ctry,
                     fillColor = '#69DBFF',
@@ -316,17 +298,15 @@ server <-  function(input, output,session) {
                     color = "grey",
                     dashArray = "3",
                     fillOpacity = 0.7,
-                    highlight = highlightOptions(
-                      weight = 5,
-                      color = '#0083CF',
-                      dashArray = "",
-                      fillOpacity = 0.5,
-                      bringToFront = TRUE),
+                    highlight = highlightOptions(weight = 5,
+                                                 color = '#0083CF',
+                                                 dashArray = "",
+                                                 fillOpacity = 0.5,
+                                                 bringToFront = TRUE),
                     label = ~NAME,
-                    labelOptions = labelOptions(
-                      style = list("font-weight" = "normal", padding = "3px 8px"),
-                      textsize = "15px",
-                      direction = "auto"),
+                    labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                                textsize = "15px",
+                                                direction = "auto"),
                     layerId = ~ISO3)
     } else {
       map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 )
@@ -342,17 +322,15 @@ server <-  function(input, output,session) {
                     color = "grey",
                     dashArray = "3",
                     fillOpacity = 0.7,
-                    highlight = highlightOptions(
-                      weight = 5,
-                      color = '#0083CF',
-                      dashArray = "",
-                      fillOpacity = 0.5,
-                      bringToFront = TRUE),
+                    highlight = highlightOptions(weight = 5,
+                                                 color = '#0083CF',
+                                                 dashArray = "",
+                                                 fillOpacity = 0.5,
+                                                 bringToFront = TRUE),
                     label = ~NAME,
-                    labelOptions = labelOptions(
-                      style = list("font-weight" = "normal", padding = "3px 8px"),
-                      textsize = "15px",
-                      direction = "auto"),
+                    labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                                textsize = "15px",
+                                                direction = "auto"),
                     layerId = ~ISO3)
     }
     
@@ -361,9 +339,6 @@ server <-  function(input, output,session) {
     
   })
   
-  
-  
-  
   observeEvent(input$mymap1_shape_click$id, {
     ctry(input$mymap1_shape_click$id)
     
@@ -371,8 +346,7 @@ server <-  function(input, output,session) {
     
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
-      
-      includeHTML(paste0('www/Report-',input$mymap1_shape_click$id,'-test2.html'))
+      includeHTML(paste0('www/profile_v6_',input$mymap1_shape_click$id, '.html'))
     })
     
     
@@ -386,10 +360,8 @@ server <-  function(input, output,session) {
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
       
-      includeHTML(paste0('www/Report-',input$mymap2_shape_click$id,'-test2.html'))
+      includeHTML(paste0('www/profile_v6_',input$mymap1_shape_click$id, '.html'))
     })
-    
-    
   }, ignoreInit = TRUE)
   
   observeEvent(input$mymap3_shape_click$id, {
@@ -399,17 +371,14 @@ server <-  function(input, output,session) {
     
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
-      filename <- paste0('www/Report-',input$mymap3_shape_click$id,'-test2.html')
+      filename <- paste0('www/profile_v6_',input$mymap1_shape_click$id, '.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
       }else{
         h4('Currently not rendered.')
       }
-      
     })
-    
-    
   }, ignoreInit = TRUE)
   
   observeEvent(input$mymap4_shape_click$id, {
@@ -421,22 +390,17 @@ server <-  function(input, output,session) {
     
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
-      filename <- paste0('www/Report-',input$mymap4_shape_click$id,'-test2.html')
+      filename <- paste0('www/profile_v6_',input$mymap1_shape_click$id, '.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
       }else{
         h4('Currently not rendered.')
       }
-      
     })
     
-    
   }, ignoreInit = TRUE)
-  
-  
 
-  
   observeEvent(input$world_country,{
     need(input$world_country, 'Please select a country!')
     iso3 <- wpp.unicef.all |> filter(area == input$world_country) |> pull(iso3)
@@ -445,17 +409,15 @@ server <-  function(input, output,session) {
     
     output$ctry_profile <- renderUI({
       
-      filename <- paste0('www/Report-',iso3,'-test2.html')
+      filename <- paste0('www/profile_v6_',input$mymap1_shape_click$id, '.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
       }else{
         h4('Currently not rendered.')
       }
-      
     })
   })
-  
   
   observeEvent(input$type_of_countries,{
     if(input$type_of_countries == 'prospects'){
@@ -463,7 +425,7 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-KEN-test2.html')
+        includeHTML('www/profile_v6_KEN.html')
       })
     } 
     if(input$type_of_countries == 'blueprint'){
@@ -471,7 +433,7 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-BGD-test2.html')
+        includeHTML('www/profile_v6_BGD.html')
       })
     } 
     if(input$type_of_countries == 'lostgen'){
@@ -479,7 +441,7 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-TUR-test2.html')
+        includeHTML('www/profile_v6_TUR.html')
       })
     }
     if(input$type_of_countries == 'world'){
@@ -490,13 +452,10 @@ server <-  function(input, output,session) {
       output$ctry_profile <- renderUI({
         req(ctry())
         
-        includeHTML('www/Report-AFG-test2.html')
+        includeHTML('www/profile_v6_AFG.html')
       })
-      
-      
     } 
   })
-  
   
   output$country_help_text <- renderText({
     if(input$type_of_countries == 'world'){
@@ -512,9 +471,6 @@ server <-  function(input, output,session) {
       return(HTML("<b>No Lost Generation</b><i> brings together key partners to achieve agreed outcomes essential for the education, protection, and adolescent and youth engagement of Syrian and Iraqi refugees. The initiative is led jointly by UNICEF and World Vision. Partners include UN agencies, international and national NGOs, institutional donors, private sector companies and the startup community; governments, and individuals.</i>"))
     }
   })
-  
-  
 }
-
 
 shinyApp(ui,server)

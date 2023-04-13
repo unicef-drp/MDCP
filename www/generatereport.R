@@ -190,7 +190,7 @@ render_report_try <- function(country) {
         "www/make_profile_v6.Rmd", params = list(
           data = country
         ),
-        output_file = paste0("Report-",country, "-test2.html")
+        output_file = paste0("profile_v6_", country, ".html")
       )
       
     },
@@ -218,10 +218,10 @@ prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
 
 #list of countries to generate reports
 #all countries
-ctry_list <- all_ctry
+#ctry_list <- all_ctry
 
 #selected countries
-#ctry_list <- 'LBN'
+ctry_list <- 'KEN'
 
 for(i in ctry_list){
   render_report_try(i)

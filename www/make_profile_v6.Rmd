@@ -30,13 +30,10 @@ knitr::opts_chunk$set(echo = FALSE,warning = F,message = F)
 ## Load dependencies
 library(xlsx)
 library(circlize)
-library(viridis)
 library(knitr)
 library(kableExtra)
 library(readxl)
-library(gridExtra)
 library(wbstats)
-library(ggrepel)
 ```
 
 
@@ -614,7 +611,7 @@ The count excludes deaths that occur in immigration detention facilities or afte
 
 ```{r,fig.align = "center",out.width="100%", warning=FALSE}
 colfunc <- colorRampPalette(c(unicef_colors_bin[1], unicef_colors_bin[2]))
-colors <- c(colfunc(4), unicef_colors[9],unicef_colors[10])
+colors <- c(colfunc(4), unicef_colors[9],unicef_colors[10],unicef_colors[11])
 load('../data/MMG.Rdata')
 dt_mmg_ctr <- dt_missing |> 
   filter(grepl(country.wpp.name, dt_missing$`Location of death`)) |> 
