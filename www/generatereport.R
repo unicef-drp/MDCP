@@ -5,6 +5,7 @@ rm(list = ls())
 # profvis({
 
 library(dplyr)
+library(readr)
 library(stringr)
 library(tibble)
 library(tidyr)
@@ -24,7 +25,6 @@ input.unicef.data <- file.path(path.basic,"Data/unicef_datawarehouse")
 input.unsd <- file.path(path.basic, "Data/UNSD")
 input.unhcr <- file.path(path.basic, "Data/UNHCR/GlobalTrends2020")
 input.unhcr2 <- file.path(path.basic, "Data/UNHCR/GlobalTrends2021")
-input.unrwa <- file.path(path.basic, "Data/UNRWA")
 input.idmc <- file.path(path.basic, "Data/IDMC/IDMC2022")
 input.wup <- file.path(path.basic,'Data/UNPD/WUP2018')
 input.ilo <- file.path(path.basic, "Data/ILO")
@@ -43,13 +43,16 @@ load(file.path(input, "UN_MigrantStock.Rdata"))
 load(file.path(input, "UN_MigrantStockAge.Rdata"))
 load(file.path(input, "UN_MigrantStockAge0to17.Rdata"))
 load(file.path(input, "UN_MigrantStockByOriginAndDestination.Rdata"))
-load(file.path(input.unrwa, "unrwa2021.Rdata")) 
 load(file.path(input.unhcr,'unhcr2020.Rdata'))
 load(file.path(input.unhcr2,'unhcr2021.Rdata'))
 load(file.path(input.unhcr2,'demref2021.imp.asy.ori.Rdata'))
 load(file.path(input.idmc,'idmc_2021.Rdata'))
 # load(file.path(input.ilo,'ilo.Rdata')) using ILO R package
 load(file.path(input.uis,'uis.Rdata')) # still bulk download
+
+UNRWA_registeredrefugees_2022Q4 <- read_csv(paste0(path.basic, "/Data/UNRWA/UNRWA_registeredrefugees_2022Q4.csv"))
+Missing_Migrants_Global_Figures_allData_withCountries <- read_csv(paste0(path.basic, "/Data/MMP/Missing_Migrants_Global_Figures_allData_withCountries.csv"))
+
 
 # Load child protection data from csv downloaded via unicef data warehouse
 cp.br.under5 <- read.csv(file.path(input.unicef.data,'fusion_GLOBAL_DATAFLOW_UNICEF_1.0_.PT_CHLD_Y0T4_REG...csv'), encoding = 'UTF8') |>
@@ -126,9 +129,11 @@ ilo.neet.pct <- get_ilostat("EIP_NEET_SEX_RT_A") |>
 ilo.neet.pct.est <- get_ilostat("EIP_2EET_SEX_RT_A") |>
   left_join(ilo.location,by = 'ref_area')
 
+#SDG indicator 8.7.1 - Proportion of children engaged in economic activity (%)
 ilo.chldlbr<- get_ilostat("SDG_A871_SEX_AGE_RT_A")|>
   left_join(ilo.location,by = 'ref_area')
 
+#SDG indicator 1.1.1 - Working poverty rate (percentage of employed living below US$1.90 PPP) (%)
 ilo.wrkngpvrty <- get_ilostat('SDG_0111_SEX_AGE_RT_A')|>
   left_join(ilo.location,by = 'ref_area')
 
@@ -221,7 +226,7 @@ prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
 #ctry_list <- all_ctry
 
 #selected countries
-ctry_list <- 'KEN'
+ctry_list <- 'MEX'
 
 for(i in ctry_list){
   render_report_try(i)

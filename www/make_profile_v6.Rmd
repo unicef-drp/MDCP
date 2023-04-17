@@ -36,8 +36,6 @@ library(readxl)
 library(wbstats)
 ```
 
-
-
 ```{r, echo = F}
 ## Creating path & Load files  
 ## To change country of concern and hyperparameters here
@@ -609,14 +607,16 @@ The International Organization for Migration (IOM)’s [Missing Migrants Project
 
 The count excludes deaths that occur in immigration detention facilities or after deportation to a migrant’s homeland, as well as deaths more loosely connected with migrants´ irregular status, such as those resulting from labour exploitation. Migrants who die or go missing after they are established in a new home are also not included in the data, so deaths in refugee camps or housing are excluded.  The deaths of internally displaced persons who die within their country of origin are also excluded.
 
+
+
 ```{r,fig.align = "center",out.width="100%", warning=FALSE}
 colfunc <- colorRampPalette(c(unicef_colors_bin[1], unicef_colors_bin[2]))
 colors <- c(colfunc(4), unicef_colors[9],unicef_colors[10],unicef_colors[11])
-load('../data/MMG.Rdata')
-dt_mmg_ctr <- dt_missing |> 
-  filter(grepl(country.wpp.name, dt_missing$`Location of death`)) |> 
-  group_by(Year, `Cause of Death`) |>
-  summarise(pop = sum(`Number Dead`), .groups='drop')
+
+dt_mmg_ctr <- Missing_Migrants_Global_Figures_allData_withCountries |> 
+  filter(ISO_TER1 == country) |> #country iso code from coordinates
+  group_by(`Incident year`, `Cause of Death`) |>
+  summarise(pop = sum(`Number of Dead`), .groups='drop')
 
 if(nrow(dt_mmg_ctr) == 0){
   #print(paste0('Temporarily no data for ', name_of_country,' from Missing Migrant Project.'))
@@ -628,14 +628,14 @@ if(nrow(dt_mmg_ctr) == 0){
            label = paste0('Temporarily no data for ', name_of_country,'\nfrom Missing Migrant Project.')) + 
   theme_void()
 }else{
-  fig.mmg <- ggplot(data =dt_mmg_ctr, aes(x = Year, y = pop, fill = `Cause of Death`)) + 
+  fig.mmg <- ggplot(data =dt_mmg_ctr, aes(x = `Incident year`, y = pop, fill = `Cause of Death`)) + 
     geom_bar(stat = 'identity', position = 'stack', alpha = 0.8) +
     labs(title = "Missing migrants by cause of death",
-         subtitle = paste0(country.wpp.name,", 2014-2022"),
+         subtitle = paste0(country.wpp.name,", 2014-2023"),
          color = NULL,
          y = 'Deaths',x = NULL)+
     scale_fill_manual(values = colors)+
-    scale_x_discrete(limits = 2014:2022)+
+    scale_x_discrete(limits = 2014:2023)+
     theme_minimal()+
     theme(legend.position="bottom", 
           legend.text = element_text(size=8), 
@@ -650,7 +650,9 @@ if(nrow(dt_mmg_ctr) == 0){
 
 ```
 
-<font size = 1><em>***Source:*** IOM, 2022. Missing Migrants Protect, https://missingmigrants.iom.int/downloads. Accessed February 2022.</em></font>
+<font size = 1><em>***Source:*** IOM, 2023. Missing Migrants Protect, https://missingmigrants.iom.int/downloads. Accessed April 2023.
+
+***Note:*** Each record of the MMP was assigned a country based on the coordinates of the incident and its location within country boundaries (land and marine economic exclusive zones) </em></font>
 
 
 ### Refugees 
@@ -672,7 +674,7 @@ kable(dt_disp_2021[c(1:9),], align = c('l',rep('r',3))) |> kable_classic(full_wi
 
 `r if(country %in% c('JOR','SYR','LBN','PSE')){"
 
-### UNRWA Registered Refugees (2021) 
+### UNRWA Registered Refugees (2021 Q4) 
 
 UNRWA registered **Palestine Refugees** are persons whose normal place of residence was Palestine during the period 1 June 1946 to 15 May 1948, and who lost both home and means of livelihood as a result of the 1948 conflict. Palestine Refugees, and descendants of Palestine refugee males, including legally adopted children, are eligible to register for UNRWA services.
 
@@ -682,37 +684,41 @@ The data shown here does not include other UNRWA persons of concern, such as Non
 
 ```{r}
 if(country %in% c('JOR','SYR','LBN','PSE')){
-  unrwa.ref.world <- df.unrwa.all.2021 |> filter(year == 2021,name == 'total') |> select(age, pop) |> mutate(pop=pop/1000)
+  unrwa.ref.world <- UNRWA_registeredrefugees_2022Q4 |> 
+    group_by(Sex) |> 
+    summarise(Total =round(sum(`Registered refugees`)/1000),
+              `0-17` =round(sum(`Registered refugees`[`Age group` == "0-17"])/1000),
+              .groups='drop') |> 
+    pivot_longer(cols=2:3,names_to="Age Group", values_to="World") 
+
+  dt <- UNRWA_registeredrefugees_2022Q4 |> 
+    filter(iso3 == country) |> 
+    group_by(Sex) |> 
+    summarise(Total =round(sum(`Registered refugees`)/1000),
+              `0-17` =round(sum(`Registered refugees`[`Age group` == "0-17"])/1000),
+              .groups='drop')  |> 
+    pivot_longer(cols=2:3,names_to="Age Group", values_to=country.wpp.name) |> 
+    left_join(unrwa.ref.world, by=c("Age Group", "Sex")) |> 
+    arrange(`Age Group`) |> select(c(2,1,3,4))
   
-  if(country == 'PSE'){  #to combine West Bank and Gaza
-  
-      unrwa.ref.ctry <- df.unrwa.all.2021 |> filter(year == 2021, iso3 == 'PSE') |>
-      group_by(age) |> 
-      summarise(pop = sum(pop), .groups='drop') |> select(age, pop)|> mutate(pop=pop/1000)
-   
-  } else {
-    unrwa.ref.ctry <- df.unrwa.all.2021 |> filter(year == 2021, iso3 ==  country)  |> select(age, pop) |> mutate(pop=pop/1000)
+  dt$`Age Group` <- c("UNRWA refugees under age 18 (thousand)", 
+                      "",
+                      "UNRWA refugees (thousand)",
+                      "")
     
-  }
-  
-  dt <- data.frame('Indicator'=c('Palestine Refugees (thousand)', 'Palestine Refugees under age 18 (thousand)'), 
-                   '2021' = c(unrwa.ref.ctry$pop[unrwa.ref.ctry$age=="all"], unrwa.ref.ctry$pop[unrwa.ref.ctry$age=="0to17"]),
-                   '2021' =  c(unrwa.ref.world$pop[unrwa.ref.ctry$age=="all"], unrwa.ref.world$pop[unrwa.ref.ctry$age=="0to17"])) |> 
-    mutate_if(is.numeric, ~format( round(.),big.mark = ' '))
-  
-  names(dt) <- c('Indicator','2021','2021')
-  Header2 <- c(" " = 1, country.wpp.name = 1,'World' = 1)
-  names(Header2) <- c(" ", country.wpp.name,'World')
+  names(dt) <- c('','Sex','2022','2022')
+  Header2 <- c(" " = 1, " " = 1, country.wpp.name = 1,'World' = 1)
+  names(Header2) <- c(" ", " ", country.wpp.name,'World')
   
   #printing table
-  kable(dt, align = c('l',rep('r',2))) |> kable_classic(full_width = T) |>
-    column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  kable(dt, align = c('l','l','r','r')) |> kable_classic(full_width = T) |>
+    column_spec(1, bold = T,width = '12cm') |>
+    column_spec(2, border_right = T,width = '12cm') |>
     add_header_above(Header2) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 }
-
 ```
 
-`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> ***Source*** UNRWA, 2022. UNRWA Registered Population Dashboard, https://www.unrwa.org/what-we-do/relief-and-social-services/unrwa-registered-population-dashboard </em></font>  "}`
+`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> ***Source*** UNRWA, 2023. UNRWA Registered Population Dashboard, https://www.unrwa.org/what-we-do/relief-and-social-services/unrwa-registered-population-dashboard. Accessed on 2023/04/14 </em></font>  "}`
 
 #### UNHCR data on education 
 
@@ -1344,12 +1350,20 @@ fig_chart9
 
 
 ```{r}
-ilo.unemploy.wpp <- ilo.unempl.pct.est |> left_join(wpp.location |> select(iso3,wpp.area = area,wpp.subregion = subregion), by = c('ref_area' = 'iso3'))
-ilo.neet.wpp <- ilo.neet.pct.est |> left_join(wpp.location |> select(iso3,wpp.area = area,wpp.subregion = subregion), by = c('ref_area' = 'iso3'))
-ilo.chldlbr.wpp <- ilo.chldlbr |>
-  left_join(wpp.location |> select(iso3,wpp.area = area,wpp.subregion = subregion), by = c('ref_area' = 'iso3'))
-ilo.wrkngpvrty.wpp <- ilo.wrkngpvrty |>
-  left_join(wpp.location |> select(iso3,wpp.area = area,wpp.subregion = subregion), by = c('ref_area' = 'iso3'))
+ilo.unemploy.wpp <- ilo.unempl.pct.est |> left_join(wpp.location |> 
+                                                      select(iso3,wpp.area = area,wpp.subregion = subregion),
+                                                    by = c('ref_area' = 'iso3'))
+ilo.neet.wpp <- ilo.neet.pct.est |> 
+  left_join(wpp.location |> select(iso3,wpp.area = area,wpp.subregion = subregion),
+            by = c('ref_area' = 'iso3'))
+
+ilo.chldlbr.wpp <- ilo.chldlbr |> left_join(wpp.location |>
+                                              select(iso3,wpp.area = area,wpp.subregion = subregion),
+                                            by = c('ref_area' = 'iso3'))
+
+ilo.wrkngpvrty.wpp <- ilo.wrkngpvrty |> left_join(wpp.location |>
+                                                    select(iso3,wpp.area = area,wpp.subregion = subregion), 
+                                                  by = c('ref_area' = 'iso3'))
 
 # if( !country %in% c('REU','TWN','ESH')){
 #
@@ -1358,50 +1372,50 @@ ilo.wrkngpvrty.wpp <- ilo.wrkngpvrty |>
 # }
 
 out <- tryCatch({  ilo.df <- ilo.unemploy.wpp |>
-                          filter(time %in% c(2000,2022) & ref_area == country) |> filter(sex == 'SEX_T', classif1 == 'AGE_YTHADULT_YGE25') |>
-                          mutate(year = ifelse(time == 2000,'2000','latest')) |>
-                          select(year,'Adult (25+) unemployment rate (%)' = obs_value) |>
-                          left_join(ilo.unemploy.wpp |>
-                          filter(time %in% c(2000,2022) & ref_area == country) |> filter(sex == 'SEX_T', classif1 == 'AGE_YTHADULT_Y15-24') |>
-                          mutate(year = ifelse(time == 2000,'2000','latest')) |>
-                          select(year,'Youth (15-24) unemployment rate (%)' = obs_value), by = 'year') |>
-                          left_join(ilo.neet.wpp|>
-                          filter(time %in% c(2000,2022) & ref_area == country) |> filter(sex == 'SEX_T') |>
-                          mutate(year = ifelse(time == 2000,'2000','latest')) |>
-                          select(year,'Share of youth (15-24) not in employment, education or training (NEET)  (%)' = obs_value), by = 'year') |>
-                          mutate_if(is.numeric,~ifelse(year == 'latest',paste0(round(.,1),' (2022)'),round(.,1))) |>                                     #above have coverage to 2022
-                          left_join(ilo.chldlbr.wpp|> group_by(ref_area) |>
-                          filter(time %in% c(2000,max(time)) ) |> filter(sex == 'SEX_T' & ref_area == country & classif1 == 'AGE_CLDVERSION_Y15-17') |> ungroup() |>
-                          mutate(obs_value = ifelse(time == max(time),paste0(round(obs_value,1),' (',time, ')'),round(obs_value,1)), year = as.character(ifelse(time == 2000,'2000','latest'))) |>
-                          select(year,'Proportion of children engaged in economic activity (%) ' = obs_value), by = 'year') |>
-                          left_join(ilo.wrkngpvrty.wpp|>
-                          filter(time %in% c(2000,max(time))) |> filter(sex == 'SEX_T' & ref_area == country & classif1 == 'AGE_YTHADULT_YGE15') |> ungroup() |>
-                          mutate(obs_value = ifelse(time == max(time),paste0(round(obs_value,1),' (',time, ')'),round(obs_value,1)), year = as.character(ifelse(time == 2000,'2000','latest'))) |>
-                          select(year,'Working poverty rate (percentage of employed living below US$1.90 PPP) ' = obs_value), by = 'year') |> arrange(year)
+  filter(time %in% c(2000,2022) & ref_area == country) |> filter(sex == 'SEX_T', classif1 == 'AGE_YTHADULT_YGE25') |>
+  mutate(year = ifelse(time == 2000,'2000','latest')) |>
+  select(year,'Adult (25+) unemployment rate (%)' = obs_value) |>
+  left_join(ilo.unemploy.wpp |>
+              filter(time %in% c(2000,2022) & ref_area == country) |> filter(sex == 'SEX_T', classif1 == 'AGE_YTHADULT_Y15-24') |>
+              mutate(year = ifelse(time == 2000,'2000','latest')) |>
+              select(year,'Youth (15-24) unemployment rate (%)' = obs_value), by = 'year') |>
+  left_join(ilo.neet.wpp|>
+              filter(time %in% c(2000,2022) & ref_area == country) |> filter(sex == 'SEX_T') |>
+              mutate(year = ifelse(time == 2000,'2000','latest')) |>
+              select(year,'Share of youth (15-24) not in employment, education or training (NEET)  (%)' = obs_value), by = 'year') |>
+  mutate_if(is.numeric,~ifelse(year == 'latest',paste0(round(.,1),' (2022)'),round(.,1))) |>                                     #above have coverage to 2022
+  left_join(ilo.chldlbr.wpp|> group_by(ref_area) |>
+              filter(time %in% c(2000,max(time)) ) |> filter(sex == 'SEX_T' & ref_area == country & classif1 == 'AGE_CLDVERSION_Y15-17') |> ungroup() |>
+              mutate(obs_value = ifelse(time == max(time),paste0(round(obs_value,1),' (',time, ')'),round(obs_value,1)), year = as.character(ifelse(time == 2000,'2000','latest'))) |>
+              select(year,'Proportion of children engaged in economic activity (%) ' = obs_value), by = 'year') |>
+  left_join(ilo.wrkngpvrty.wpp|>
+              filter(time %in% c(2000,max(time))) |> filter(sex == 'SEX_T' & ref_area == country & classif1 == 'AGE_YTHADULT_YGE15') |> ungroup() |>
+              mutate(obs_value = ifelse(time == max(time),paste0(round(obs_value,1),' (',time, ')'),round(obs_value,1)), year = as.character(ifelse(time == 2000,'2000','latest'))) |>
+              select(year,'Working poverty rate (percentage of employed living below US$1.90 PPP) ' = obs_value), by = 'year') |> arrange(year)
 
 
-                dt4 <- ilo.df |>
-                  pivot_longer(-year) |>
-                  pivot_wider(names_from=year, values_from=value)
+dt4 <- ilo.df |>
+  pivot_longer(-year) |>
+  pivot_wider(names_from=year, values_from=value)
 
 
-                colnames(dt4) <- c('Indicator', '2000' ,'Latest')
+colnames(dt4) <- c('Indicator', '2000' ,'Latest')
 
-                # create vector with colspan
-                myHeader <- c(" " = 1, country.wpp.name = 2)
-                names(myHeader) <- c(" ", country.wpp.name)
+# create vector with colspan
+myHeader <- c(" " = 1, country.wpp.name = 2)
+names(myHeader) <- c(" ", country.wpp.name)
 
 
-                kable(dt4,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
-                  column_spec(1, bold = T, border_right = T,width = '12cm') |>
-                  add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
-                flag_ilo = T
-        },
-        error=function(e) {
-          flag_ilo = F
-
-            paste0('Temporarily no data for ',name_of_country,' with this indicator.')
-        }
+kable(dt4,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
+  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
+flag_ilo = T
+},
+error=function(e) {
+  flag_ilo = F
+  
+  paste0('Temporarily no data for ',name_of_country,' with this indicator.')
+}
 )
 
 ```
