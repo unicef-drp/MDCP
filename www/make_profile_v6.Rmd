@@ -44,8 +44,6 @@ id_of_country <- mig.stock |> filter(iso3 == country) |> pull(area.id) |> unique
 sub_of_country <- mig.stock |> filter(iso3 == country) |> pull(subregion) |> unique()
 sub_of_country <- ifelse(is.na(sub_of_country),'Northern America',sub_of_country)
 name_of_country <- mig.stock |> filter(iso3 == country) |> pull(area) |> unique()
-top_n_immi <- 3  #number of top immigration countries
-top_n_emi <- 3 #number of top emigration countries
 
 blank_theme <- theme_minimal()+
   theme(
@@ -126,7 +124,7 @@ pop.df <- wpp.age.group |> filter((year %in% c(2000,2022,2050) & iso3 == country
 -------  
 
 ### International migration statistics
-**International migrant stock**: For statistical purposes, the international migrant stock is defined as the foreign-born population residing in the country at a specific reference day (here 1 July of the reference year). If information on country of birth is not available, citizenship is used as criterion. Note, that the reason for changing the residence country or legal status is not a criterion in this definition. Thus, the international migrant stock explicitly includes refugees and irregular migrants. While in most countries refugees represent only a small share of the total migrant stock, in some countries the majority of the international ‘migrants’ may have refugee status. 
+**International migrant stock**: For statistical purposes, the international migrant stock is defined as the foreign-born population residing in the country at a specific reference day (here 1 July of the reference year). If information on country of birth is not available, country of citizenship is used as criterion. Note that this definition does not include criterion related to an individual's reason for changing their country of residence or legal status. Thus, the international migrant stock explicitly includes refugees and irregular migrants. While in most countries refugees represent only a small share of the total migrant stock, in some countries the majority of the international ‘migrants’ may have refugee status. 
 <br/>
 
 
@@ -447,8 +445,8 @@ fig5 <- ggplot(data=data5,aes(x = age.group.label, y = pct)) +
   geom_bar(data=data5 |> filter(sex=='female', type=='non-migrant'), aes(color='female'), stat='identity', alpha=0) + 
   geom_bar(data=data5 |> filter(sex=='male', type=='non-migrant'), aes(y=pct * -1, color='male'), stat='identity', alpha=0) + 
   scale_y_continuous(breaks=seq(-0.08,0.08,0.02),labels=paste0(abs(seq(-8,8,2)),'%')) + 
-  scale_fill_manual(values = unicef_colors_bin)+
-  scale_color_manual(values = unicef_colors_bin)+
+  scale_fill_manual(values = unicef_colors)+
+  scale_color_manual(values = unicef_colors)+
   coord_flip()+
   blank_theme +
   theme(axis.title.y = element_blank())+
@@ -462,10 +460,13 @@ fig5
 <font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2020. International Migrant Stock 2020.</em></font>
   
 #### International migration corridors
-The migrant stock can be analyzed by country of origin and country of destination. The chart below shows the major migration corridors from and to `r country.wpp.name`. The light blue arrows show where emigrants from `r country.wpp.name` settled and the dark blue arrows show where immigrants in `r country.wpp.name` came from. The width of the arrow represents the number of migrants. Below the charts the top 3 migration corridors for emigration from `r country.wpp.name` and immigration into `r country.wpp.name` are shown.
+The table below shows the top 3 destinations and origins of international migrants from and to `r country.wpp.name`.
 
   
 ```{r}
+top_n_immi <- 3  #number of top immigration countries
+top_n_emi <- 3 #number of top emigration countries
+
 ## helper function assigning iso to area
 split_10 <- function(x) return(str_replace_all(x, "(.{9,}?)\\s",'\\1\n'))
 
@@ -511,20 +512,19 @@ data1 <- mig.stock.orig.dest |> ungroup() |>
   mutate(orig.area.diagram = ifelse(nchar(orig) == 3, split_10(orig.area),orig), dest.area.diagram = ifelse(nchar(dest) == 3, split_10(dest.area),dest)) 
   
 
-
-# dt.mig.orig.dest <- data.frame( idctr = 1:3) |> bind_cols( data1 |> filter(orig == country, dest %in% concerned_ctries) |> arrange(desc(pop)) |> top_n(3,pop) |> transmute(Emigrants = paste0(dest,': ',round(pop,1))),
-#                                                                data1 |> filter(dest == country, orig %in% concerned_ctries) |> arrange(desc(pop)) |> top_n(3,pop) |> transmute(Immigrants = paste0(orig,': ',round(pop,1)))
-# ) 
-# colnames(dt.mig.orig.dest)[1] <- paste0('Top 3 corridors of migration in ', name_of_country,' (thousand)')
-#   
-# kable(dt.mig.orig.dest, align = c('l',rep('r',2))) |> kable_classic(full_width = T) |>
-#   column_spec(1, bold = T, border_right = T,width = '12cm')
-
-emi.df <-  data1 |> filter(orig == country, dest %in% concerned_ctries) |> arrange(desc(pop)) |> top_n(3,pop) |> mutate(dest = paste0('To ',dest.area), pop = format(round(pop),big.mark = ' ',scientific = F)) |> select('Top 3 emigration corridors' = dest,'Migrants (thousand)' = pop) |>
+emi.df <-  data1 |> filter(orig == country, dest %in% concerned_ctries) |>
+  arrange(desc(pop)) |> top_n(3,pop) |> 
+  mutate(dest = paste0('To ',dest.area), pop = format(round(pop),big.mark = ' ',scientific = F)) |> 
+  select(!!as.name(paste0('Top 3 emigration corridors from ', country.wpp.name)) := dest,
+         'Migrants (thousand)' = pop) |>
   kable(align = c('l','r'))|> kable_classic(full_width = T) |>
   column_spec(1, bold = T, border_right = T,width = '12cm')
 
-immi.df <-  data1 |> filter(dest == country, orig %in% concerned_ctries) |> arrange(desc(pop)) |> top_n(3,pop) |> mutate(dest = paste0('From ',orig.area), pop = format(round(pop),big.mark = ' ',scientific = F)) |> select('Top 3 immigration corridors' = dest,'Migrants (thousand)' = pop) |>
+immi.df <-  data1 |> filter(dest == country, orig %in% concerned_ctries) |> 
+  arrange(desc(pop)) |> top_n(3,pop) |> 
+  mutate(dest = paste0('From ',orig.area), pop = format(round(pop),big.mark = ' ',scientific = F)) |>
+  select(!!as.name(paste0('Top 3 immigration corridors to ', country.wpp.name)) := dest,
+         'Migrants (thousand)' = pop) |>
   kable(align = c('l','r'))|> kable_classic(full_width = T) |>
   column_spec(1, bold = T, border_right = T,width = '12cm')
 
@@ -532,11 +532,15 @@ emi.df
 immi.df
 
 ```  
+
+<font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2021. Trends in International Migrant Stock: Migrants by Age and Sex.</em></font> 
+
   
+The chart below shows the major migration corridors from and to `r country.wpp.name`. The light blue arrows show where emigrants from `r country.wpp.name` settled and the dark blue arrows show where immigrants in `r country.wpp.name` came from. The width of the arrow represents the number of migrants.
+
 <center>
 
-<font size = 3> **International immigration and emigration corridors related to `r country.wpp.name`, 2020 (migrant stock in thousands)** </em></font>  
-
+<font size = 3> **`r country.wpp.name`: International immigration and emigration corridors, 2020 (migrant stock in thousands)** </em></font>  
 
 </center>  
 
@@ -598,7 +602,6 @@ circos.trackPlotRegion(
 )
 ```  
   
-
 <font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2021. Trends in International Migrant Stock: Migrants by Age and Sex.</em></font> 
 
 
@@ -718,7 +721,7 @@ if(country %in% c('JOR','SYR','LBN','PSE')){
 }
 ```
 
-`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> ***Source*** UNRWA, 2023. UNRWA Registered Population Dashboard, https://www.unrwa.org/what-we-do/relief-and-social-services/unrwa-registered-population-dashboard. Accessed on 2023/04/14 </em></font>  "}`
+`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> ***Source*** UNRWA, 2023. UNRWA Registered Population Dashboard, https://www.unrwa.org/what-we-do/relief-and-social-services/unrwa-registered-population-dashboard. Accessed on 14/4/2023 </em></font>  "}`
 
 #### UNHCR data on education 
 
@@ -1129,16 +1132,14 @@ data_chart3 <-  bind_rows(age_pyramid_female,age_pyramid_male) |>
   mutate(pct = pop/sum(pop), age.group = factor(age.group,level = unique(age.group)))
 
 
-colors <- c('Female' = unicef_colors_bin[1], 'Male' = unicef_colors_bin[2])
-
 fig_chart3 <- ggplot(data=data_chart3,aes(x= age.group, y = pct)) +
   geom_bar(data= data_chart3 |> filter(sex == 'Female', year == 2022),aes(fill = 'Female'), stat = 'identity',alpha = 0.4) +
   geom_bar(data= data_chart3 |> filter(sex == 'Male', year == 2022), aes(y = pct * -1, fill = 'Male'), stat = 'identity', alpha = 0.4) +
   geom_bar(data= data_chart3 |> filter(sex == 'Female', year == 2050), aes(color = 'Female'), stat = 'identity', alpha = 0) +
   geom_bar(data= data_chart3 |> filter(sex == 'Male', year == 2050), aes(y = pct * -1, color = 'Male'), stat = 'identity', alpha = 0) +
   scale_y_continuous(breaks=seq(-0.08,0.08,0.02),labels=paste0(abs(seq(-8,8,2)),'%')) +
-  scale_fill_manual(values = colors)+
-  scale_color_manual(values = colors)+
+  scale_fill_manual(values = unicef_colors)+
+  scale_color_manual(values = unicef_colors)+
   coord_flip()+
   blank_theme +
   theme(axis.title.y = element_blank(),legend.position="bottom",legend.direction="vertical",plot.margin=unit(c(0,0,0,1.5), "cm"))+
@@ -1348,22 +1349,17 @@ fig_chart9
 
 **Youth unemployment rate** refers to the percentage of unemployed individuals in the age group of 15 to 24 years within the total labor force of the same age group in a particular country or region. This indicator is used to measure the degree to which young people are able to find employment opportunities and participate in the workforce. High youth unemployment rates can have negative social and economic consequences, such as reduced economic growth, increased poverty, and social unrest.
 
+***Note***
+The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data (ILO).
+
 
 ```{r}
-ilo.unemploy.wpp <- ilo.unempl.pct.est |> left_join(wpp.location |> 
-                                                      select(iso3,wpp.area = area,wpp.subregion = subregion),
-                                                    by = c('ref_area' = 'iso3'))
-ilo.neet.wpp <- ilo.neet.pct.est |> 
-  left_join(wpp.location |> select(iso3,wpp.area = area,wpp.subregion = subregion),
-            by = c('ref_area' = 'iso3'))
+wpp.location.area <- wpp.location |> select(iso3, wpp.area = area, wpp.subregion = subregion)
 
-ilo.chldlbr.wpp <- ilo.chldlbr |> left_join(wpp.location |>
-                                              select(iso3,wpp.area = area,wpp.subregion = subregion),
-                                            by = c('ref_area' = 'iso3'))
-
-ilo.wrkngpvrty.wpp <- ilo.wrkngpvrty |> left_join(wpp.location |>
-                                                    select(iso3,wpp.area = area,wpp.subregion = subregion), 
-                                                  by = c('ref_area' = 'iso3'))
+ilo.unemploy.wpp <- ilo.unempl.pct.est |> left_join(wpp.location.area, by = c('ref_area' = 'iso3'))
+ilo.neet.wpp <- ilo.neet.pct.est |> left_join(wpp.location.area, by = c('ref_area' = 'iso3'))
+ilo.chldlbr.wpp <- ilo.chldlbr |> left_join(wpp.location.area, by = c('ref_area' = 'iso3'))
+ilo.wrkngpvrty.wpp <- ilo.wrkngpvrty |> left_join(wpp.location.area, by = c('ref_area' = 'iso3'))
 
 # if( !country %in% c('REU','TWN','ESH')){
 #
@@ -1405,7 +1401,6 @@ colnames(dt4) <- c('Indicator', '2000' ,'Latest')
 myHeader <- c(" " = 1, country.wpp.name = 2)
 names(myHeader) <- c(" ", country.wpp.name)
 
-
 kable(dt4,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
   column_spec(1, bold = T, border_right = T,width = '12cm') |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
@@ -1414,13 +1409,13 @@ flag_ilo = T
 error=function(e) {
   flag_ilo = F
   
-  paste0('Temporarily no data for ',name_of_country,' with this indicator.')
+  paste0('Temporarily no data for ', name_of_country, ' with this indicator.')
 }
 )
 
 ```
 
-***Note*** The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data (ILO).
+
 
 
 ```{r,fig.align = "center"}
@@ -1451,7 +1446,7 @@ if( flag_ilo){
 ```
 
 
-<font size = 1><em>***Source:*** International Labour Organization, 2022. ILOSTAT database, https://ilostat.ilo.org/data.</em></font>
+<font size = 1><em>***Source:*** International Labour Organization, 2023. ILOSTAT database, https://ilostat.ilo.org/data. Accessed on 17/04/2023./em></font>
 
 ### Economic indicators
 
@@ -1459,58 +1454,71 @@ National economic indicators are statistics that measure the performance and hea
 
 ```{r, message = F}
 my_indicators <- c("GNI per capita, Atlas method (current US$) " = "NY.GNP.PCAP.CD",
-"GDP per capita (current US$) " = "NY.GDP.PCAP.CD",
-"Poverty headcount ratio at national poverty lines (% of population) " = "SI.POV.NAHC",
-"Statistical Capacity score  - (value 0-100)" = "IQ.SCI.OVRL",
-"GDP growth (annual %)" = "NY.GDP.MKTP.KD.ZG")
+                   "GDP per capita (current US$) " = "NY.GDP.PCAP.CD",
+                   "Poverty headcount ratio at national poverty lines (% of population) " = "SI.POV.NAHC",
+                   "Statistical Capacity score  - (value 0-100)" = "IQ.SCI.OVRL",
+                   "GDP growth (annual %)" = "NY.GDP.MKTP.KD.ZG")
 
 ## income level file "OGHIST" downloadable:https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups
 
 out <- tryCatch({
-        wb.df <- wb_data(my_indicators, country = country,
-        start_date = 2000, end_date = 2022, return_wide = FALSE) |> mutate(date = as.character(date)) |> mutate_if(is.numeric,~as.character(round(.,1))) |>
-
-        group_by(indicator_id)|>
-        #filter(!is.na(value)) |>
-        filter(if(all(is.na(value))) date %in% c(2000,2022) else (date == 2000|!is.na(value))) |> filter(date %in% c(2000,max(date))) |> ungroup() |>
-        mutate(value =ifelse(is.na(value), NA , ifelse(date != 2000, ifelse(indicator_id %in% c('NY.GNP.PCAP.CD','NY.GDP.PCAP.CD'),paste0(format(round(as.numeric(value)),big.mark = ' '), ' (',date,')'),paste0(format(round(as.numeric(value),1),big.mark = ' '), ' (',date,')')),
-                                                                         ifelse(indicator_id %in% c('NY.GNP.PCAP.CD','NY.GDP.PCAP.CD'),format(round(as.numeric(value)),big.mark = ' '),format(round(as.numeric(value),1),big.mark = ' ')))),
-             date = ifelse(date == 2000,'2000','Latest')) |>
-        left_join(read_xlsx(file.path(path.basic,'Data/WB/OGHIST.xlsx'),sheet = 'Country Analytical History', skip = 5) |> gather(key = 'date',value = 'class.iso3',3:37) |> filter(`...1` == country & date %in% c(2000,2021)) |> mutate(date = ifelse(date == 2021,'Latest',date)), by = c('date')) |>
-        mutate(class.iso3 = ifelse(date == 'Latest',paste0(recode(class.iso3, L = 'Low income',LM = 'Lower middle income',UM = 'Upper middle income', H = 'High income'),' (2021)'),recode(class.iso3, L = 'Low income',LM = 'Lower middle income',UM = 'Upper middle income', H = 'High income'))) |>
-        select(indicator_id,date,value,'WB Income level' = class.iso3) |> spread('indicator_id','value') |>
-        select(Labour = date,'WB Income level', "GNI per capita, Atlas method (current US$ ) " = "NY.GNP.PCAP.CD","GDP per capita (current US$ )" = "NY.GDP.PCAP.CD",
-        "GDP growth (annual %)" = "NY.GDP.MKTP.KD.ZG",
-        "Poverty headcount ratio at national poverty lines (% of population) " = "SI.POV.NAHC",
-        "Statistical Capacity score  - (value 0-100)" = "IQ.SCI.OVRL")
-
-
-        dt5 <- wb.df|>
-        pivot_longer(-Labour) |>
-        pivot_wider(names_from=Labour, values_from=value)
-
-        colnames(dt5) <- c('Indicator', '2000' ,'Latest')
-
-        # create vector with colspan
-        myHeader <- c(" " = 1, country.wpp.name = 2)
-        names(myHeader) <- c(" ", country.wpp.name)
-        
-        flag_wb <- T
-
-
-        kable(dt5, align = c('l','r','r'))  |> kable_classic(full_width = T) |>
-        column_spec(1, bold = T, border_right = T,width = '12cm') |>
-        add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
-
-  }, error = function(e){
-    flag_wb <- F
-     paste0('Temporarily no data for ',name_of_country,' with this indicator.')
-  }
+  wb.df <- wb_data(my_indicators, country = country,
+                   start_date = 2000, end_date = 2022, return_wide = FALSE) |> 
+    mutate(date = as.character(date)) |> mutate_if(is.numeric,~as.character(round(.,1))) |>
+    group_by(indicator_id)|>
+    #filter(!is.na(value)) |>
+    filter(if(all(is.na(value))) date %in% c(2000,2022) else (date == 2000|!is.na(value))) |> 
+    filter(date %in% c(2000,max(date))) |> 
+    ungroup() |>
+    mutate(value =ifelse(is.na(value), NA , ifelse(date != 2000, ifelse(indicator_id %in% c('NY.GNP.PCAP.CD','NY.GDP.PCAP.CD'), paste0(format(round(as.numeric(value)),big.mark = ' '), ' (',date,')'),paste0(format(round(as.numeric(value),1),big.mark = ' '), ' (',date,')')),
+                                                   ifelse(indicator_id %in% c('NY.GNP.PCAP.CD','NY.GDP.PCAP.CD'),format(round(as.numeric(value)),big.mark = ' '), format(round(as.numeric(value),1),big.mark = ' ')))),
+           date = ifelse(date == 2000,'2000','Latest')) |>
+    left_join(read_xlsx(file.path(path.basic,'Data/WB/OGHIST.xlsx'), sheet = 'Country Analytical History', skip = 5) |> 
+                gather(key = 'date',value = 'class.iso3',3:37) |> 
+                filter(`...1` == country & date %in% c(2000,2021)) |>
+                mutate(date = ifelse(date == 2021,'Latest',date)), by = c('date')) |>
+    mutate(class.iso3 = ifelse(date == 'Latest',paste0(recode(class.iso3, 
+                                                              L = 'Low income',
+                                                              LM = 'Lower middle income',
+                                                              UM = 'Upper middle income',
+                                                              H = 'High income'),' (2021)'), recode(class.iso3,
+                                                                                                    L = 'Low income',
+                                                                                                    LM = 'Lower middle income',
+                                                                                                    UM = 'Upper middle income', 
+                                                                                                    H = 'High income'))) |>
+    select(indicator_id,date,value,'WB Income level' = class.iso3) |>
+    spread('indicator_id','value') |>
+    select(Labour = date,'WB Income level',
+           "GNI per capita, Atlas method (current US$ ) " = "NY.GNP.PCAP.CD",
+           "GDP per capita (current US$ )" = "NY.GDP.PCAP.CD",
+           "GDP growth (annual %)" = "NY.GDP.MKTP.KD.ZG",
+           "Poverty headcount ratio at national poverty lines (% of population) " = "SI.POV.NAHC",
+           "Statistical Capacity score  - (value 0-100)" = "IQ.SCI.OVRL")
+  
+  dt5 <- wb.df|>
+    pivot_longer(-Labour) |>
+    pivot_wider(names_from=Labour, values_from=value)
+  
+  colnames(dt5) <- c('Indicator', '2000' ,'Latest')
+  
+  # create vector with colspan
+  myHeader <- c(" " = 1, country.wpp.name = 2)
+  names(myHeader) <- c(" ", country.wpp.name)
+  
+  flag_wb <- T
+  
+  kable(dt5, align = c('l','r','r'))  |>
+    kable_classic(full_width = T) |>
+    column_spec(1, bold = T, border_right = T,width = '12cm') |>
+    add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
+  
+}, error = function(e){
+  flag_wb <- F
+  paste0('Temporarily no data for ',name_of_country,' with this indicator.')
+}
 )
 
 out
-
-
 ```
 
 ```{r, message=F,warning=F,out.width="50%"}
