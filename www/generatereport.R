@@ -1,11 +1,11 @@
 rm(list = ls())
-#library(tidyverse) #
 # library(profvis)
 # 
 # profvis({
 
 library(dplyr)
 library(readr)
+library(readxl)
 library(stringr)
 library(tibble)
 library(tidyr)
@@ -14,6 +14,10 @@ library(ggplot2)
 library(Rilostat) # get_ilostat_toc get_ilostat
 library(rmarkdown) # render
 library(wbstats) # wb_data
+
+library(circlize)
+library(knitr)
+library(kableExtra)
 
 ############### File paths #################
 
@@ -50,29 +54,12 @@ load(file.path(input.idmc,'idmc_2021.Rdata'))
 # load(file.path(input.ilo,'ilo.Rdata')) using ILO R package
 load(file.path(input.uis,'uis.Rdata')) # still bulk download
 
+### UNHCR, UNRWA Refugee data ####
+
 UNRWA_registeredrefugees_2022Q4 <- read_csv(paste0(path.basic, "/Data/UNRWA/UNRWA_registeredrefugees_2022Q4.csv"))
 Missing_Migrants_Global_Figures_allData_withCountries <- read_csv(paste0(path.basic, "/Data/MMP/Missing_Migrants_Global_Figures_allData_withCountries.csv"))
 
-
-# Load child protection data from csv downloaded via unicef data warehouse
-cp.br.under5 <- read.csv(file.path(input.unicef.data,'fusion_GLOBAL_DATAFLOW_UNICEF_1.0_.PT_CHLD_Y0T4_REG...csv'), encoding = 'UTF8') |>
-  filter(SEX.Sex == '_T: Total',!str_detect(REF_AREA.Geographic.area, 'UNICEF')) |>
-  mutate(iso3 = str_sub(REF_AREA.Geographic.area,1,3))
-
-# Load IGME data from sheet 'UNIGME2022_Country_Rates', from Yang Liu in Mortality team yanliu@unicef.org
-igme <- read.csv(file.path(input.igme,'UNIGME2022_Country_Rates.csv')) |>
-  filter( Indicator %in% c('Infant mortality rate','Neonatal mortality rate','Under-five mortality rate','Mortality rate age 10-19'), Sex == 'Total') |>
-  mutate(Year = as.integer(Year + 0.5 ), Indicator = factor(Indicator,levels = c('Infant mortality rate','Neonatal mortality rate','Under-five mortality rate','Mortality rate age 10-19')))
-
-### ALL WPP countries
-wpp.location <- wpp.location |> mutate(subregion = ifelse(region == 'Northern America', 'Northern America',subregion), subregion.id = ifelse(region == 'Northern America', 905 ,subregion.id))
-
-all_ctry <- c(intersect(wpp.age.group |> filter(area.id < 900, year == 2022,poptotal.thsd >90) |> pull(iso3),
-                        mig.stock.orig.dest |> filter(year == 2020, dest.area.id<900) |> distinct(dest.iso3) |> pull()))
-all_ctry <- all_ctry[all_ctry!= 'TWN']
-#save(all_ctry,file = 'all_ctry.Rdata')
-
-############### Connectivity data #################
+### UNHCR Connectivity data ####
 dcr.df <- rbind(tibble(V1 = c( "Armenia", "Azerbaijan", "Bosnia and Herzegovina", "Croatia", "France",  
                                "Germany","Hungary","Luxembourg","Montenegro","Romania", "Russian Federation",
                                "Switzerland","Tajikistan","Turkey","Ukraine",'Czechia','Serbia','North Macedonia',
@@ -108,6 +95,34 @@ dcr.ctry.ref <- tibble(country = dcr.df[1:86,1] |> pull(),
   mutate(unhcr.subregion = ifelse(country %in% c("Armenia", "Azerbaijan", "Bosnia and Herzegovina", "Croatia", "France",  "Germany","Hungary","Luxembourg","Montenegro","Romania", "Russian Federation","Switzerland","Tajikistan","Turkey","Ukraine",'Czechia','Serbia','North Macedonia'),'Europe & Central Asia',unhcr.subregion)) |>
   mutate(unhcr.subregion = ifelse(country == 'Canada','North America',unhcr.subregion))
 
+
+### Education data ####
+##UIS data Gross Enrollment rate downloaded here: http://data.uis.unesco.org/
+uis <- read.csv(file.path(path.basic,'Data/UIS/GrossEnrolmentRatio.csv'),
+                encoding = 'UTF-8', stringsAsFactors = F)
+
+### Child protection data ####
+# Load child protection data from csv downloaded via unicef data warehouse
+cp.br.under5 <- read.csv(file.path(input.unicef.data,'fusion_GLOBAL_DATAFLOW_UNICEF_1.0_.PT_CHLD_Y0T4_REG...csv'), encoding = 'UTF8') |>
+  filter(SEX.Sex == '_T: Total',!str_detect(REF_AREA.Geographic.area, 'UNICEF')) |>
+  mutate(iso3 = str_sub(REF_AREA.Geographic.area,1,3))
+
+### Mortality data ####
+# Load IGME data from sheet 'UNIGME2022_Country_Rates', from Yang Liu in Mortality team yanliu@unicef.org
+igme <- read.csv(file.path(input.igme,'UNIGME2022_Country_Rates.csv')) |>
+  filter( Indicator %in% c('Infant mortality rate','Neonatal mortality rate','Under-five mortality rate','Mortality rate age 10-19'), Sex == 'Total') |>
+  mutate(Year = as.integer(Year + 0.5 ), Indicator = factor(Indicator,levels = c('Infant mortality rate','Neonatal mortality rate','Under-five mortality rate','Mortality rate age 10-19')))
+
+### ALL WPP countries
+wpp.location <- wpp.location |> mutate(subregion = ifelse(region == 'Northern America', 'Northern America',subregion), subregion.id = ifelse(region == 'Northern America', 905 ,subregion.id))
+
+all_ctry <- c(intersect(wpp.age.group |> filter(area.id < 900, year == 2022,poptotal.thsd >90) |> pull(iso3),
+                        mig.stock.orig.dest |> filter(year == 2020, dest.area.id<900) |> distinct(dest.iso3) |> pull()))
+all_ctry <- all_ctry[all_ctry!= 'TWN']
+#save(all_ctry,file = 'all_ctry.Rdata')
+
+
+
 ######################## ILO data from API################################
 # TOC 
 ilo.toc <- get_ilostat_toc()
@@ -138,25 +153,41 @@ ilo.wrkngpvrty <- get_ilostat('SDG_0111_SEX_AGE_RT_A')|>
   left_join(ilo.location,by = 'ref_area')
 
 
-############### World bank remittances data #################
+############### World bank data #################
+OGHIST <- read_xlsx(file.path(path.basic,'Data/WB/OGHIST.xlsx'), sheet = 'Country Analytical History', skip = 5) |> 
+  gather(key = 'date',value = 'class.iso3',3:37)
 
 wb.remittance.us <- wb_data("BX.TRF.PWKR.CD.DT", country = 'all',start_date = 2021,end_date = 2021)  |> 
-  select(`Country Name` = country,`Country Code` = iso3c, rem.us = BX.TRF.PWKR.CD.DT)
+  select(`Country Name` = country,`Country Code` = iso3c, rem.us = BX.TRF.PWKR.CD.DT) |> 
+  mutate(rem.us = rem.us/1000000)
 wb.remittance.pct <- wb_data("BX.TRF.PWKR.DT.GD.ZS", country = 'all',start_date = 2021,end_date = 2021)  |> 
   select(`Country Name` = country,`Country Code` = iso3c, rem.pct = BX.TRF.PWKR.DT.GD.ZS)
 
-
 ############### Helper functions and variables ###############
+## Input time period of concern for population numbers
+yr_bg1 <- 1950 
+yr_ed1 <- 2050
 
-addUnits <- function(n) {
-  labels <- ifelse(n < 1000, n,  # less than thousands
-                   ifelse(n < 1e6, paste0(round(n/1e3), 'k'),  # in thousands
-                          ifelse(n < 1e9, paste0(round(n/1e6,1), 'M'),  # in millions
-                                 ifelse(n < 1e12, paste0(round(n/1e9,1), 'B'), # in billions
-                                        ifelse(n < 1e15, paste0(round(n/1e12), 'T'), # in trillions
-                                               'too big!'
-                                        )))))
-  return(labels)
+
+findcolor <- function(year) {
+  func <-colorRampPalette(unicef_colors_bin[1])
+  color <- func(7)[year-2012]
+  return(color)}
+
+
+blank_theme <- theme_minimal()+
+  theme(
+    axis.title.x = element_blank(),
+    panel.border = element_blank(),
+    panel.grid=element_blank(),
+    plot.title=element_text(size=14, face="bold")
+  )
+
+#return NA if there isn't value. Used in education data
+pur <- function(x) ifelse(is.null(x),NA,x)
+
+scale_round_k <- function(n){
+  ifelse(n<1000, round(n/1000,digits=2), round(n/1000))
 }
 
 #Color palettes
@@ -165,6 +196,10 @@ unicef_colors <- c("#1CABE2", "#00833D", "#80BD41",
                    "#FFC20E", "#F26A21", "#E2231A",
                    "#961A49", "#6A1E74", "#D8D1C9", 
                    "#777779", "#2D2926", "#374EA2")
+
+unicef_colors_tri <- c("#14789e", "#1CABE2", "#60c4eb", 
+                       "#b3880a", "#ffc20e", "#ffd456",
+                       "#535355", "#777779", "#a0a0a1")
 
 #bin UNICEF cyan - UNICEF cyan (20%)
 unicef_colors_bin <- c("#1CABE2", "#d2eef9")
@@ -226,7 +261,7 @@ prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
 #ctry_list <- all_ctry
 
 #selected countries
-ctry_list <- 'MEX'
+ctry_list <- "MEX"
 
 for(i in ctry_list){
   render_report_try(i)
