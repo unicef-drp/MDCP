@@ -1,15 +1,20 @@
-library(shiny) # fluidPage wellPanel radioButtons div HTML htmlOutput conditionalPanel hr h4 selectInput reactiveVal renderUI req includeHTML observeEvent validate need updateSelectInput renderText shinyApp
+library(shiny) # fluidPage wellPanel radioButtons div HTML htmlOutput conditionalPanel hr h4 selectInput reactiveVal renderUI req includeHTML observeEvent validate need updateSelectInput renderText shinyApp 
 library(leaflet) # leafletOutput renderLeaflet leaflet leafletOptions addTiles setMaxBounds setView addPolygons labelOptions highlightOptions
-library(dplyr) # filter left_join select mutate pull
-library(rworldmap) # joinCountryData2Map
-library(shinyWidgets) # No used functions found
+library(dplyr) # filter left_join select mutate pull 
+library(tidyr) # replace_na 
+library(rworldmap) # joinCountryData2Map 
+
+## COUNTRY LISTS ----
 
 note_map <- "Note: This map is stylized and not to scale and does not reflect 
 a position by UNICEF on the legal status of any country or territory or the delimitation 
 of any country or territory or the delimitation of any frontiers."
-prospect_countries <- c('EGY', 'ETH', 'IRQ', 'JOR', 'KEN', 'LBN', 'SDN', 'UGA')
-blueprint_countries <- c("BGD", "CMR", "ECU", "ETH", "HND", "IDN", "IRQ", "KEN", "LBN", "LBY", "RWA")
-lostgen_countries <- c("SYR","TUR","LBN","JOR","IRQ","EGY")
+prospect_countries <- c('EGY', 'ETH', 'IRQ', 'JOR',
+                        'KEN', 'LBN', 'SDN', 'UGA')
+blueprint_countries <- c("BGD", "CMR", "ECU", "ETH", "HND", "IDN", 
+                         "IRQ", "KEN", "LBN", "LBY", "RWA")
+lostgen_countries <- c("SYR","TUR","LBN",
+                       "JOR","IRQ","EGY")
 aa_countries <- c("AFG","CAF","TCD","COL","ETH","IRQ",
                   "LBY","MOZ","NER","NGA","PHL","SOM",
                   "SSD","SDN","VUT","YEM")
@@ -26,6 +31,8 @@ countries <- wpp.unicef.all |> filter(iso3 %in% all_ctry & !iso3 %in% c('TWN')) 
   mutate(m49_sub = replace_na(m49_sub,'Unknown'))
 choices <- countries$area
 
+## UI ----
+
 ui <- fluidPage(
   wellPanel(radioButtons(inputId="type_of_countries", "Browse all countries or select a country group",
                          choiceNames = list('All countries',
@@ -37,10 +44,7 @@ ui <- fluidPage(
                          selected = 'prospects',
                          inline = T),
             htmlOutput(outputId = 'country_help_text'),
-            tags$head(tags$style("#country_help_text{color: grey;
-                                 font-size: 15px;
-                                 }"
-            )),
+            tags$head(tags$style("#country_help_text{color: grey; font-size: 15px;}")),
             style = "border: 3px solid #00AEEF; opacity: 0.92;"),
   conditionalPanel(condition = "input.type_of_countries == 'world'",
                    wellPanel(tags$head(tags$style('.selectize-dropdown {z-index: 100000000 !important;}')),
@@ -55,7 +59,6 @@ ui <- fluidPage(
                              style = "border: 3px solid #00AEEF; opacity: 0.92;")),
   conditionalPanel(condition = "input.type_of_countries == 'prospects'",
                    wellPanel(tags$hr(),
-                             
                              h4(style = 'font-family:Arial;','Please select a country'),
                              leaflet::leafletOutput(outputId =  "mymap1"),
                              style = "border: 3px solid #00AEEF; opacity: 0.92;")),
@@ -64,7 +67,6 @@ ui <- fluidPage(
                              h4(style = 'font-family:Arial;','Please select a country'),
                              leaflet::leafletOutput(outputId =  "mymap2"),
                              style = "border: 3px solid #00AEEF; opacity: 0.92;")),
-  
   conditionalPanel(condition = "input.type_of_countries == 'lostgen'",
                    wellPanel(tags$hr(),
                              h4(style = 'font-family:Arial;','Please select a country'),
@@ -80,6 +82,7 @@ ui <- fluidPage(
             style = "border: 3px solid #00AEEF; opacity: 0.92;")
 )
 
+## SERVER ----
 server <-  function(input, output,session) {
   
   ctry <- reactiveVal('AFG')
