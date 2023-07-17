@@ -11,9 +11,7 @@ output:
   bookdown::html_document2:
     #css: style.css
     theme: cerulean
-    toc: true
-    toc_float:
-      collapsed: false
+    toc: false
     number_sections: false
 params:
   data: AFG
@@ -596,7 +594,6 @@ The chart below shows the major migration corridors from and to `r country.wpp.n
 
 
 ```{r, fig.align = "center", out.width = "150%"}
-
 # parameters
 circos.clear()
 circos.par(start.degree = 90, canvas.ylim = c(-1.1,1.1), gap.degree = 4, track.margin = c(-0.1, 0.1), points.overflow.warning = FALSE)
@@ -718,28 +715,24 @@ kable(dt_ref, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
 
 
 
-`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> ***Source*** UNRWA, 2023. UNRWA Registered Population Dashboard, https://www.unrwa.org/what-we-do/relief-and-social-services/unrwa-registered-population-dashboard. Accessed on 14/4/2023 </em></font>  "}`
-
 #### UNHCR data on education 
 
 UNHCR has annual report on enrollment of refugees in education. Measuring school enrollment for refugee children is important to understand: access to education, integration, future opportunities and social and economic development of individuals and communities.
-
 ```{r}
-kable(dt_ref_edu_2019, align = c('l','r')) |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
-  row_spec(1:6) |>
-  add_header_above(myHeader[1:2]) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
+flag_UNHCR_edu <- all(!is.na(dt_ref_edu_2019$`2019`))
 ```
 
+```{r}
+if(flag_UNHCR_edu){kable(dt_ref_edu_2019, align = c('l','r')) |> kable_classic(full_width = T) |>
+  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  row_spec(1:6) |>
+  add_header_above(myHeader[1:2]) |>   row_spec( 0, extra_css = "border-top: 1px solid white")}
+```
 
-<center>
-
-<font size = 3> **School enrollment rates of refugees and national population by education level<br>`r country.wpp.name`, latest data available** </em></font>  
-
-</center>  
+`r if(flag_UNHCR_edu){"<center><font size = 3> **School enrollment rates of refugees and national population by education level,<+br> latest data available** </em></font> </center>   "}`
 
 ```{r, fig.align = "center", warning=FALSE}
-
+if(flag_UNHCR_edu){
 data_enrlmnt_cmpr <- data.frame(type = c(rep('Refugees',3),rep('Population',3)), 
                                 level = c('Pre-primary','Primary','Secondary','Pre-primary','Primary','Secondary') ) |>
   left_join( uis |> filter(LOCATION== country, EDULIT_IND %in% c('GER_1','GER_02','GER_2T3')) |>
@@ -777,19 +770,18 @@ fig_enrlmnt_cmpr <- ggplot(data_enrlmnt_cmpr, aes(x = level,y = rate, fill = col
         legend.key = element_rect(fill = NA, color = unicef_colors[11]),
         panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
-fig_enrlmnt_cmpr
+fig_enrlmnt_cmpr}
 ```
+`r if(flag_UNHCR_edu){"<font size = 1><em>***Source:*** UNHCR, 2021. Global Trends: Forced Displacement in 2020. UNHCR, 2020. Coming Together For Refugee Education. Education Report 2020. UNESCO, Institute for Statistics, 2020. UIS database, http://data.uis.unesco.org.</em></font>"}`
 
-<font size = 1><em>***Source:*** UNHCR, 2021. Global Trends: Forced Displacement in 2020. UNHCR, 2020. Coming Together For Refugee Education. Education Report 2020. UNESCO, Institute for Statistics, 2020. UIS database, http://data.uis.unesco.org.</em></font>
+
+`r if(!flag_UNHCR_edu){"<font size = 1><em>***Note:*** Currently no data for this indicator for this country. </em></font>"}`
+
 
 
 #### UNHCR data on digital connectivity
 
 Mobile cellular coverage is important in digital connectivity as it allows people to stay connected, access information and services, and participate in the digital economy. In areas with limited or no mobile network coverage, people may face barriers to accessing critical services such as healthcare, education, and emergency services and participating in social, economic, and political activities.
-
-`r if(!(country.wpp.name %in% dcr.ctry.ref$country)){"
-**No refugee connectivity data for this country **
-"}`
 
 ```{r}
 if(country.wpp.name %in% dcr.ctry.ref$country){
@@ -809,9 +801,11 @@ if(country.wpp.name %in% dcr.ctry.ref$country){
 ```
 
 
-***Source:*** UNCHR, 2016. Connecting Refugees. https://www.unhcr.org/publications/operations/5770d43c4/connecting-refugees.html. </em></font>
+`r if(country.wpp.name %in% dcr.ctry.ref$country){"<font size = 1> <em>***Source:*** UNCHR, 2016. Connecting Refugees. https://www.unhcr.org/publications/operations/5770d43c4/connecting-refugees.html. <br> ***Note:*** The estimation of connectivity for refugees was based on UNHCR 2014 data on the demographic composition and major locations of refugees and individuals in refugee-like situations, in addition to mobile network coverage data. </em></font>"}`
 
-<font size = 1><em> ***Note:*** The estimation of connectivity for refugees was based on UNHCR 2014 data on the demographic composition and major locations of refugees and individuals in refugee-like situations, in addition to mobile network coverage data.
+
+`r if(!(country.wpp.name %in% dcr.ctry.ref$country)){"<font size = 1><em>***Note:*** Currently no data for this indicator for this country. </em></font>"}`
+
 
 `r if(country %in% c('JOR','SYR','LBN','PSE')){"
 
@@ -863,6 +857,10 @@ if(country %in% c('JOR','SYR','LBN','PSE')){
 }
 ```
 
+
+
+`r if(country %in% c('JOR','SYR','LBN','PSE')){"<font size = 1><em> ***Source*** UNRWA, 2023. UNRWA Registered Population Dashboard, https://www.unrwa.org/what-we-do/relief-and-social-services/unrwa-registered-population-dashboard. Accessed on 14/4/2023 </em></font>  "}`
+
 ### Internally displaced persons
 **Internally Displaced Persons (IDPs)** are “Persons or groups of persons who have been forced or obliged to flee or to leave their homes or places of habitual residence, in particular as a result of or in order to avoid the effects of armed conflict, situations of generalized violence, violations of human rights or natural or human-made disasters, and who have not crossed an internationally recognized State border” ([UN Guiding Principles on Internal Displacement](https://www.unhcr.org/43ce1cff2.pdf)).
 
@@ -906,8 +904,8 @@ data.adet$hazard.cat <- factor(data.adet$hazard.cat, levels=c("Weather related",
 ```
 
 
-`r if(nrow(data.idp) >= 0){"
-<center><font size = 3>**Number of internally displaced persons and new displacements by hazard category <br>2021 (in thousands)**</font></center>
+`r if(nrow(data.idp) > 0){"
+<center><font size = 3>**Number of internally displaced persons and new displacements<br> by hazard category in 2022 (in thousands)**</font></center>
 "} else {"
 **No IDP data for this country **
 "}`
@@ -944,7 +942,7 @@ if(nrow(data.idp) > 0){
 
 ```
 
-`r if(nrow(data.idp) >= 0){"
+`r if(nrow(data.idp) > 0){"
 <center><font size = 3>**Number of new IDPs from disaster events by hazard category<br>2008-2022 (in thousands)**</font></center>
 "}`
 
@@ -969,7 +967,7 @@ if(nrow(data.idp) > 0){
 
 ```
 
-`r if(nrow(data.idp) >= 0){" <font size = 1><em>***Source:*** IDMC, 2023. Global Internal Displacement Database.</em></font> <br>
+`r if(nrow(data.idp) > 0){" <font size = 1><em>***Source:*** IDMC, 2023. Global Internal Displacement Database.</em></font> <br>
 "}`
 
 
@@ -1065,6 +1063,10 @@ In this section, we provide an overview of the country's key demographic and soc
 #### Population numbers
 
 ```{r}
+if(country.wpp.name == "New Zealand"){
+  pop.df$year[pop.df$year=="2022 Australia/New Zealand"] <- "2022 Aus/NZ"
+  }
+
 dt1 <- pop.df |>
   select(1:8) |>
   pivot_longer(-year) |>
@@ -1357,20 +1359,16 @@ myHeader <- c(" " = 1, country.wpp.name = 2)
 names(myHeader) <- c(" ", country.wpp.name)
 
 if(nrow(dt.igme) == 0){
-  print(paste0('Temporarily no data for ',name_of_country,' with this indicator.'))
+  flag_igme <- F
 }else{
+  flag_igme <- T
   kable(dt.igme,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
   column_spec(1, bold = T, border_right = T,width = '12cm') |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 }
 
 ```
-
-<center>
-
-<font size = 3> **Child mortality indicators <br>`r country.wpp.name`, 1990-`r latest_year_igme`**</font>  
-
-</center> 
+`r if(flag_igme){"<center> <font size = 3> **Child mortality**</font></center> "}`
 
 ```{r,fig.align = "center"}
 if(!nrow(dt.igme) == 0){
@@ -1389,7 +1387,10 @@ fig_igme
 }
 ```
 
-<font size = 1><em>***Source:*** United Nations Inter-agency Group for Child Mortality Estimation (UN IGME) 2022. UN IGME database, https://childmortality.org/.</em></font>
+`r if(flag_igme){"<font size = 1><em>***Source:*** United Nations Inter-agency Group for Child Mortality Estimation (UN IGME) 2022. UN IGME database, https://childmortality.org/.</em></font>"}`
+
+`r if(!flag_igme){"<font size = 1><em>***Note:*** Currently no data for this indicator for this country. </em></font>"}`
+
 
 ### Child protection indicators
 Children on the move lacking a birth certificate or identity documentation may be denied access to education or health services, are at risk being treated as an adult, and face an increased risk of family separation and ofobstacles to durable solutions such as integration or relocation. Lacking a birth certificate can also be an obstacle to proving nationalitycitizenship and being considered in the country's vital statistics. 
@@ -1494,8 +1495,6 @@ kable(dt7, align = c('l','r','r','r'))  |> kable_classic(full_width = T) |>
 
 ### Labour indicators
 
-***Note:*** The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data (ILO).
-
 ```{r}
 ilo.df.blank <- tibble(Indicator =c("Adult (25+) unemployment rate (%)", 
                                     "Youth (15-24) unemployment rate (%)",
@@ -1559,23 +1558,25 @@ ilo.df.blank$Latest[5] <- ifelse(is.na(v2),NA,paste0(round(v2,1), "(",v2_time, "
 # create vector with colspan
 myHeader <- c(" " = 1, country.wpp.name = 2)
 names(myHeader) <- c(" ", country.wpp.name)
-flag_ilo <-  T
 
-kable(ilo.df.blank,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
-  add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
+if(all(ilo.df.blank$Latest %in% c(NA, "NA (NA)"))){ #if there aren't any Labour values
+  flag_ilo <-  F
+} else {
+  flag_ilo <-  T
+  kable(ilo.df.blank,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
+    column_spec(1, bold = T, border_right = T,width = '12cm') |>
+    add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
+}
 
 ```
 
-`r if(flag_ilo){"
-
 **Youth unemployment rate** refers to the percentage of unemployed individuals in the age group of 15 to 24 years within the total labor force of the same age group in a particular country or region. This indicator is used to measure the degree to which young people are able to find employment opportunities and participate in the workforce. High youth unemployment rates can have negative social and economic consequences, such as reduced economic growth, increased poverty, and social unrest.
 
-"}`
+***Note:*** The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data (ILO).
+
 
 ```{r,fig.align = "center"}
 #Youth unemployment rate chart
-flag_ilo <- T
 if( flag_ilo){
   data_chart6 <- ilo.unemploy.wpp2 |>
     filter(ref_area == country , sex == 'SEX_T' , classif1 == 'AGE_YTHADULT_Y15-24') |> 
@@ -1587,12 +1588,7 @@ if( flag_ilo){
 
 ```
 
-
-<center>
-
-<font size = 3> **Youth (15-24) unemployment rate <br>`r country.wpp.name`, `r yr_bg3`-`r yr_ed3`**</font>  
-
-</center> 
+`r if(flag_ilo){" <center> <font size = 3> **Youth (15-24) unemployment rate**</font>  </center> "}`
 
 ```{r,fig.align = "center"}
 if( flag_ilo){
@@ -1613,20 +1609,20 @@ if( flag_ilo){
   fig_chart6}
 ```
 
-<font size = 1><em>***Source:*** International Labour Organization, 2023. ILOSTAT database, https://ilostat.ilo.org/data. Accessed on 17/04/2023. </em></font>
+`r if(flag_ilo){"<font size = 1><em>***Source:*** International Labour Organization, 2023. ILOSTAT database, https://ilostat.ilo.org/data. Accessed on 17/04/2023. </em></font>"}`
+
+`r if(!flag_ilo){"<font size = 1><em>***Note:*** Currently no data for this indicator for this country. </em></font>"}`
 
 ### Economic indicators
 
 National economic indicators are statistics that measure the performance and health of a country's economy. These indicators provide information on the country's overall economic activity, growth, and development.
 
-```{r, message = F}
+```{r, message = F, include=F}
 my_indicators <- c("GNI per capita, Atlas method (current US$) " = "NY.GNP.PCAP.CD",
                    "GDP per capita (current US$) " = "NY.GDP.PCAP.CD",
                    "Poverty headcount ratio at national poverty lines (% of population) " = "SI.POV.NAHC",
                    "Statistical Capacity score  - (value 0-100)" = "IQ.SCI.OVRL",
                    "GDP growth (annual %)" = "NY.GDP.MKTP.KD.ZG")
-
-## income level file "OGHIST" downloadable:https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups
 
 out <- tryCatch({
   wb.df <- wb_data(my_indicators, country = country,
@@ -1678,17 +1674,16 @@ out <- tryCatch({
   myHeader <- c(" " = 1, country.wpp.name = 2)
   names(myHeader) <- c(" ", country.wpp.name)
   
-  flag_wb <- T
-  
   kable(dt5, align = c('l','r','r'))  |>
     kable_classic(full_width = T) |>
     column_spec(1, bold = T, border_right = T,width = '12cm') |>
     add_header_above(myHeader) |> 
     row_spec( 0, extra_css = "border-top: 1px solid white")
   
+  flag_wb <<- T
+  
 }, error = function(e){
-  flag_wb <- F
-  paste0('Temporarily no data for ',name_of_country,' with this indicator.')
+  flag_wb <<- F
 }
 )
 
@@ -1698,7 +1693,8 @@ out
 ```{r, message=F,warning=F,out.width="50%"}
 
 if(flag_wb){
-data_chart78 <- wb_data(c("GDP growth" = "NY.GDP.MKTP.KD.ZG", "GNI.pcap" = "NY.GNP.PCAP.CD"), country = country, start_date = 1990, end_date = 2022, return_wide = FALSE) |>
+data_chart78 <- wb_data(c("GDP growth" = "NY.GDP.MKTP.KD.ZG", "GNI.pcap" = "NY.GNP.PCAP.CD"), 
+                        country = country, start_date = 1990, end_date = 2022, return_wide = FALSE) |>
   filter(!is.na(value))
 
 yr_bg4 <- min(data_chart78 |> filter(indicator_id == "NY.GDP.MKTP.KD.ZG") |> pull(date))
@@ -1726,8 +1722,10 @@ fig_chart8 <- ggplot(data_chart78 |> filter(indicator_id == 'NY.GNP.PCAP.CD'), a
        title = "GNI per capita, Atlas method (current US$))",
        #subtitle = paste0(name_of_country, ", ", yr_bg5,"-",yr_ed5),
        fill = NULL)+
+  scale_x_continuous(breaks= pretty_breaks()) + 
   blank_theme+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"),
+  theme(legend.position="bottom",legend.direction="vertical",
+        plot.title=element_text(size=14, face="bold"),
         panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 print(fig_chart7)
@@ -1735,4 +1733,6 @@ print(fig_chart8)
 }
 ```
 
-<font size = 1><em>***Source:*** World Bank, 2022. World Bank database, https://data.worldbank.org. </em></font>
+`r if(flag_wb){"<font size = 1><em>***Source:*** World Bank, 2022. World Bank database, https://data.worldbank.org. </em></font>"}`
+
+`r if(!flag_wb){"<font size = 1><em>***Note:*** Currently no data for this indicator for this country. </em></font>"}`

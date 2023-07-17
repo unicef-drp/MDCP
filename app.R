@@ -26,7 +26,15 @@ load('data/all_ctry.Rdata')
 load('data/location.Rdata')
 load('data/UNSD_M49_Aug2019.Rdata')
 
-countries <- wpp.unicef.all |> filter(iso3 %in% all_ctry & !iso3 %in% c('TWN'))  |>
+countries <- wpp.unicef.all |> 
+  filter(iso3 %in% all_ctry & !iso3 %in% c('TWN', "SHN", "FRO", "GGY", 
+                                           "IMN", "JEY", "GIB", "VAT", 
+                                           "XKX", "BES", "VGB", "CYM",
+                                           "MSR", "BLM", "MAF", "SXM",
+                                           "TCA", "FLK", "BMU", "GRL",
+                                           "SPM", "MHL", "NRU", "MNP",
+                                           "PLW", "ASM", "COK", "NIU",
+                                           "TKL", "TUV", "WLF"))  |> #which countries to not show
   left_join(select(m49,iso3,m49_sub = subregion)) |>
   mutate(m49_sub = replace_na(m49_sub,'Unknown'))
 choices <- countries$area
