@@ -51,8 +51,6 @@ ui <- fluidPage(
                          choiceValues = c('world','prospects','blueprint','lostgen','aa'),
                          selected = 'prospects',
                          inline = T),
-            htmlOutput(outputId = 'country_help_text'),
-            tags$head(tags$style("#country_help_text{color: grey; font-size: 15px;}")),
             style = "border: 3px solid #00AEEF; opacity: 0.92;"),
   conditionalPanel(condition = "input.type_of_countries == 'world'",
                    wellPanel(tags$head(tags$style('.selectize-dropdown {z-index: 100000000 !important;}')),
@@ -63,25 +61,29 @@ ui <- fluidPage(
                                          selected = choices[1],
                                          multiple = F,
                                          width = '400px'),
-                             leaflet::leafletOutput(outputId =  "mymap4"),
-                             style = "border: 3px solid #00AEEF; opacity: 0.92;")),
-  conditionalPanel(condition = "input.type_of_countries == 'prospects'",
-                   wellPanel(tags$hr(),
-                             h4(style = 'font-family:Arial;','Please select a country'),
                              leaflet::leafletOutput(outputId =  "mymap1"),
                              style = "border: 3px solid #00AEEF; opacity: 0.92;")),
-  conditionalPanel(condition = "input.type_of_countries == 'blueprint'",
-                   wellPanel(tags$hr(),
+  conditionalPanel(condition = "input.type_of_countries == 'prospects'",
+                   wellPanel(HTML("<i>The </i><b>PROSPECTS</b><i> Partnership is a programme funded by the Dutch Government focusing on improving responses to forced displacement crises for the benefit of forcibly displaced populations and host communities. The programme was launched in 2019 and it brings together the International Finance Corporation (IFC), International Labour Organization (ILO), United Nations High Commissioner for Refugees (UNHCR), United Nations Children's Fund (UNICEF), and the World Bank (WB) to find innovative solutions to this growing challenge around the world.</i>"),
+                             tags$hr(),
                              h4(style = 'font-family:Arial;','Please select a country'),
                              leaflet::leafletOutput(outputId =  "mymap2"),
                              style = "border: 3px solid #00AEEF; opacity: 0.92;")),
-  conditionalPanel(condition = "input.type_of_countries == 'lostgen'",
-                   wellPanel(tags$hr(),
+  conditionalPanel(condition = "input.type_of_countries == 'blueprint'",
+                   wellPanel(HTML("<i>In 2020, UNHCR and UNICEF agreed on an ambitious two-year </i><b>Blueprint for Joint Action</b>. <i>The</i> Blueprint <i>represents a commitment to accelerate joint efforts in a transformational agenda, to promote and protect the rights of refugee children and the communities that host them, and to support their inclusion and access to services. In this, it will help us deliver on the pledges we made at the Global Refugee Forum in December 2019, in support of the Global Compact on Refugees.</i>"),
+                             tags$hr(),
                              h4(style = 'font-family:Arial;','Please select a country'),
                              leaflet::leafletOutput(outputId =  "mymap3"),
                              style = "border: 3px solid #00AEEF; opacity: 0.92;")),
+  conditionalPanel(condition = "input.type_of_countries == 'lostgen'",
+                   wellPanel(HTML("<b>No Lost Generation</b><i> brings together key partners to achieve agreed outcomes essential for the education, protection, and adolescent and youth engagement of Syrian and Iraqi refugees. The initiative is led jointly by UNICEF and World Vision. Partners include UN agencies, international and national NGOs, institutional donors, private sector companies and the startup community; governments, and individuals.</i>"),
+                             tags$hr(),
+                             h4(style = 'font-family:Arial;','Please select a country'),
+                             leaflet::leafletOutput(outputId =  "mymap4"),
+                             style = "border: 3px solid #00AEEF; opacity: 0.92;")),
   conditionalPanel(condition = "input.type_of_countries == 'aa'",
-                   wellPanel(tags$hr(),
+                   wellPanel(HTML("<b>IDP Action Agenda</b><i> The United Nations Secretary-General’s Action Agenda on Internal Displacement aims to 1) help IDPs find a durable solution to their displacement; 2) better prevent new displacement crises from emerging; and 3) ensure those facing displacement receive effective protection and assistance.</i>"),
+                             tags$hr(),
                              h4(style = 'font-family:Arial;','Please select a country'),
                              leaflet::leafletOutput(outputId =  "mymap5"),
                              style = "border: 3px solid #00AEEF; opacity: 0.92;")),
@@ -93,192 +95,16 @@ ui <- fluidPage(
 ## SERVER ----
 server <-  function(input, output,session) {
   
+  #initial map
   ctry <- reactiveVal('AFG')
-  
   output$ctry_profile <- renderUI({
     req(ctry())
     includeHTML('www/profile_v6_AFG.html')
   })
   
+  
+  #map to show when selecting all countries countries
   output$mymap1 <- leaflet::renderLeaflet({
-    req(ctry())
-    countries_selected <- prospect_countries
-    worldmap_spdf <-   joinCountryData2Map(data.frame(ISO = countries_selected, is.prospect = 1) |>
-                                             mutate(type = '<em>Prospects</em> Country: '),
-                                           joinCode = "ISO3",
-                                           nameJoinColumn = "ISO")
-    
-    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
-    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
-    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
-    
-    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
-      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
-      setMaxBounds(-180,-55,180,75) |>
-      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
-      addPolygons(data = map.ctry ,
-                  fillColor = '#0083CF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3) |>
-      addPolygons(data = map.other.ctry,
-                  fillColor = '#69DBFF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  highlight = highlightOptions(weight = 5,color = '#0083CF',dashArray = "",fillOpacity = 0.5,bringToFront = TRUE),
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3)
-    return(mymap)
-  })
-  
-  output$mymap2 <- leaflet::renderLeaflet({
-    req(ctry())
-    countries_selected <- blueprint_countries
-    worldmap_spdf <-   joinCountryData2Map(data.frame(ISO = countries_selected, is.prospect = 1) |>
-                                             mutate(type = '<em>Blueprint</em> Country: '),
-                                           joinCode = "ISO3",
-                                           nameJoinColumn = "ISO")
-    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
-    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
-    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
-    
-    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
-      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
-      setMaxBounds(-180,-55,180,75) |>
-      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
-      addPolygons(data = map.ctry ,
-                  fillColor = '#0083CF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3) |>
-      addPolygons(data = map.other.ctry,
-                  fillColor = '#69DBFF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  highlight = highlightOptions(weight = 5,color = '#0083CF',dashArray = "",fillOpacity = 0.5,bringToFront = TRUE),
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3)
-    return(mymap)
-  })
-  
-  output$mymap3 <- leaflet::renderLeaflet({
-    req(ctry())
-    countries_selected <- lostgen_countries
-    worldmap_spdf <-   joinCountryData2Map(data.frame(ISO = countries_selected, is.prospect = 1) |> 
-                                              mutate(type = '<em>No Lost Generation</em> Country: ')
-                                            , joinCode = "ISO3"
-                                            , nameJoinColumn = "ISO")
-    
-    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
-    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
-    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
-    
-    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
-      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
-      setMaxBounds(-180,-55,180,75) |>
-      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
-      addPolygons(data = map.ctry ,
-                  fillColor = '#0083CF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3) |>
-      addPolygons(data = map.other.ctry,
-                  fillColor = '#69DBFF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  highlight = highlightOptions(weight = 5, color = '#0083CF', dashArray = "", fillOpacity = 0.5, bringToFront = TRUE),
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3)
-    return(mymap)
-  })
-  
-  output$mymap5 <- leaflet::renderLeaflet({
-    req(ctry())
-    countries_selected <- aa_countries
-    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |>
-                                              mutate(type = '<em>IDP Action Agenda</em> Country: ')
-                                            , joinCode = "ISO3"
-                                            , nameJoinColumn = "ISO")
-    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
-    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
-    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
-    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
-    
-    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
-      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
-      setMaxBounds(-180,-55,180,75) |>
-      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
-      addPolygons(data = map.ctry ,
-                  fillColor = '#0083CF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3) |>
-      addPolygons(data = map.other.ctry,
-                  fillColor = '#69DBFF',
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
-                  fillOpacity = 0.7,
-                  highlight = highlightOptions(weight = 5,color = '#0083CF',dashArray = "",fillOpacity = 0.5,bringToFront = TRUE),
-                  label = ~NAME,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
-                                              direction = "auto"),
-                  layerId = ~ISO3)
-    return(mymap)
-  })
-  
-  output$mymap4 <- leaflet::renderLeaflet({
     req(ctry())
     countries_selected <- countries |> pull(iso3)
     worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |> mutate(type = 'Country: ')
@@ -352,30 +178,199 @@ server <-  function(input, output,session) {
     return(mymap)
   })
   
+  #map to show when selecting prospect countries
+  output$mymap2 <- leaflet::renderLeaflet({
+    req(ctry())
+    countries_selected <- prospect_countries
+    worldmap_spdf <-   joinCountryData2Map(data.frame(ISO = countries_selected, is.prospect = 1) |>
+                                             mutate(type = '<em>Prospects</em> Country: '),
+                                           joinCode = "ISO3",
+                                           nameJoinColumn = "ISO")
+    
+    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
+    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
+    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
+    
+    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+      setMaxBounds(-180,-55,180,75) |>
+      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
+      addPolygons(data = map.ctry ,
+                  fillColor = '#0083CF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3) |>
+      addPolygons(data = map.other.ctry,
+                  fillColor = '#69DBFF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  highlight = highlightOptions(weight = 5,color = '#0083CF',dashArray = "",fillOpacity = 0.5,bringToFront = TRUE),
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3)
+    return(mymap)
+  })
+  
+  #map to show when selecting blueprint countries
+  output$mymap3 <- leaflet::renderLeaflet({
+    req(ctry())
+    countries_selected <- blueprint_countries
+    worldmap_spdf <-   joinCountryData2Map(data.frame(ISO = countries_selected, is.prospect = 1) |>
+                                             mutate(type = '<em>Blueprint</em> Country: '),
+                                           joinCode = "ISO3",
+                                           nameJoinColumn = "ISO")
+    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
+    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
+    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
+    
+    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+      setMaxBounds(-180,-55,180,75) |>
+      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
+      addPolygons(data = map.ctry ,
+                  fillColor = '#0083CF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3) |>
+      addPolygons(data = map.other.ctry,
+                  fillColor = '#69DBFF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  highlight = highlightOptions(weight = 5,color = '#0083CF',dashArray = "",fillOpacity = 0.5,bringToFront = TRUE),
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3)
+    return(mymap)
+  })
+  
+  #map to show when selecting lostgen countries
+  output$mymap4 <- leaflet::renderLeaflet({
+    req(ctry())
+    countries_selected <- lostgen_countries
+    worldmap_spdf <-   joinCountryData2Map(data.frame(ISO = countries_selected, is.prospect = 1) |> 
+                                              mutate(type = '<em>No Lost Generation</em> Country: ')
+                                            , joinCode = "ISO3"
+                                            , nameJoinColumn = "ISO")
+    
+    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
+    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
+    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
+    
+    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+      setMaxBounds(-180,-55,180,75) |>
+      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
+      addPolygons(data = map.ctry ,
+                  fillColor = '#0083CF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3) |>
+      addPolygons(data = map.other.ctry,
+                  fillColor = '#69DBFF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  highlight = highlightOptions(weight = 5, color = '#0083CF', dashArray = "", fillOpacity = 0.5, bringToFront = TRUE),
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3)
+    return(mymap)
+  })
+  
+  #map to show when selecting AA countries
+  output$mymap5 <- leaflet::renderLeaflet({
+    req(ctry())
+    countries_selected <- aa_countries
+    worldmap_spdf <-   joinCountryData2Map( data.frame(ISO = countries_selected, is.prospect = 1) |>
+                                              mutate(type = '<em>IDP Action Agenda</em> Country: ')
+                                            , joinCode = "ISO3"
+                                            , nameJoinColumn = "ISO")
+    map.ctry <- worldmap_spdf |> subset( ISO3 ==ctry())
+    label.map.ctry <- HTML(paste0(map.ctry$type,map.ctry$NAME))
+    map.other.ctry <- worldmap_spdf |> subset(is.prospect==1 & ISO3 !=ctry())
+    label.map.other.ctry <- paste0(map.other.ctry$type,map.other.ctry$NAME) |> lapply(htmltools::HTML)
+    
+    mymap <- leaflet::leaflet(quakes, options = leafletOptions(minZoom = 2, maxZoom = 6)) |>
+      addTiles("http://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png") |>
+      setMaxBounds(-180,-55,180,75) |>
+      setView(map.ctry$LON,map.ctry$LAT,zoom = 2.5) |>
+      addPolygons(data = map.ctry ,
+                  fillColor = '#0083CF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3) |>
+      addPolygons(data = map.other.ctry,
+                  fillColor = '#69DBFF',
+                  weight = 1,
+                  opacity = 0.7,
+                  color = "grey",
+                  dashArray = "3",
+                  fillOpacity = 0.7,
+                  highlight = highlightOptions(weight = 5,color = '#0083CF',dashArray = "",fillOpacity = 0.5,bringToFront = TRUE),
+                  label = ~NAME,
+                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize = "15px",
+                                              direction = "auto"),
+                  layerId = ~ISO3)
+    return(mymap)
+  })
+
+  
+  #changes when selecting from all countries map
   observeEvent(input$mymap1_shape_click$id, {
     ctry(input$mymap1_shape_click$id)
+    updateSelectInput(session,'world_country',selected = countries |> 
+                        filter(iso3 == input$mymap1_shape_click$id) |> 
+                        select(area) |> pull())
     output$ctry_profile <- renderUI(NULL)
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
-      includeHTML(paste0('www/profile_v6_',input$mymap1_shape_click$id, '.html'))
-    })
-  }, ignoreInit = TRUE)
-  
-  observeEvent(input$mymap2_shape_click$id, {
-    ctry(input$mymap2_shape_click$id)
-    output$ctry_profile <- renderUI(NULL)
-    output$ctry_profile <- renderUI({
-      shiny::validate(need(ctry(),'Please select country.'))
-      includeHTML(paste0('www/profile_v6_',input$mymap2_shape_click$id, '.html'))
-    })
-  }, ignoreInit = TRUE)
-  
-  observeEvent(input$mymap3_shape_click$id, {
-    ctry(input$mymap3_shape_click$id)
-    output$ctry_profile <- renderUI(NULL)
-    output$ctry_profile <- renderUI({
-      shiny::validate(need(ctry(),'Please select country.'))
-      filename <- paste0('www/profile_v6_',input$mymap3_shape_click$id, '.html')
+      filename <- paste0('www/profile_v6_',input$mymap1_shape_click$id, '.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
@@ -385,11 +380,29 @@ server <-  function(input, output,session) {
     })
   }, ignoreInit = TRUE)
   
+  #changes when clicking prospect map
+  observeEvent(input$mymap2_shape_click$id, {
+    ctry(input$mymap2_shape_click$id)
+    output$ctry_profile <- renderUI(NULL)
+    output$ctry_profile <- renderUI({
+      shiny::validate(need(ctry(),'Please select country.'))
+      includeHTML(paste0('www/profile_v6_',input$mymap2_shape_click$id, '.html'))
+    })
+  }, ignoreInit = TRUE)
+  
+  #changes when clicking blueprint map
+  observeEvent(input$mymap3_shape_click$id, {
+    ctry(input$mymap3_shape_click$id)
+    output$ctry_profile <- renderUI(NULL)
+    output$ctry_profile <- renderUI({
+      shiny::validate(need(ctry(),'Please select country.'))
+      includeHTML(paste0('www/profile_v6_',input$mymap3_shape_click$id, '.html'))
+    })
+  }, ignoreInit = TRUE)
+  
+  #changes when clicking lostgen map
   observeEvent(input$mymap4_shape_click$id, {
     ctry(input$mymap4_shape_click$id)
-    updateSelectInput(session,'world_country',selected = countries |> 
-                        filter(iso3 == input$mymap4_shape_click$id) |> 
-                        select(area) |> pull())
     output$ctry_profile <- renderUI(NULL)
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
@@ -402,12 +415,11 @@ server <-  function(input, output,session) {
       }
     })
   }, ignoreInit = TRUE)
+
   
+  #changes when clicking AA map
   observeEvent(input$mymap5_shape_click$id, {
     ctry(input$mymap5_shape_click$id)
-    updateSelectInput(session,'world_country',selected = countries |> 
-                        filter(iso3 == input$mymap5_shape_click$id) |> 
-                        select(area) |> pull())
     output$ctry_profile <- renderUI(NULL)
     output$ctry_profile <- renderUI({
       shiny::validate(need(ctry(),'Please select country.'))
@@ -421,6 +433,7 @@ server <-  function(input, output,session) {
     })
   }, ignoreInit = TRUE)
 
+  #changes when selecting from country dropdown menu
   observeEvent(input$world_country,{
     need(input$world_country, 'Please select a country!')
     iso3 <- wpp.unicef.all |> filter(area == input$world_country) |> pull(iso3)
@@ -428,7 +441,7 @@ server <-  function(input, output,session) {
     output$ctry_profile <- renderUI(NULL)
     output$ctry_profile <- renderUI({
       
-      filename <- paste0('www/profile_v6_',input$world_country$id, '.html')
+      filename <- paste0('www/profile_v6_',iso3, '.html')
       
       if(file.exists(filename)){
         includeHTML(filename)
@@ -438,6 +451,7 @@ server <-  function(input, output,session) {
     })
   })
   
+  #changes when changing type of countries
   observeEvent(input$type_of_countries,{
     if(input$type_of_countries == 'prospects'){
       ctry('KEN')
@@ -477,24 +491,6 @@ server <-  function(input, output,session) {
         includeHTML('www/profile_v6_AFG.html')
       })
     } 
-  })
-  
-  output$country_help_text <- renderText({
-    if(input$type_of_countries == 'world'){
-      return(NULL)
-    }
-    if(input$type_of_countries == 'prospects'){
-      return(HTML("<i>The </i><b>PROSPECTS</b><i> Partnership is a programme funded by the Dutch Government focusing on improving responses to forced displacement crises for the benefit of forcibly displaced populations and host communities. The programme was launched in 2019 and it brings together the International Finance Corporation (IFC), International Labour Organization (ILO), United Nations High Commissioner for Refugees (UNHCR), United Nations Children's Fund (UNICEF), and the World Bank (WB) to find innovative solutions to this growing challenge around the world.</i>"))
-    }
-    if(input$type_of_countries == 'blueprint'){
-      return(HTML("<i>In 2020, UNHCR and UNICEF agreed on an ambitious two-year </i><b>Blueprint for Joint Action</b>. <i>The</i> Blueprint <i>represents a commitment to accelerate joint efforts in a transformational agenda, to promote and protect the rights of refugee children and the communities that host them, and to support their inclusion and access to services. In this, it will help us deliver on the pledges we made at the Global Refugee Forum in December 2019, in support of the Global Compact on Refugees.</i>"))
-    }
-    if(input$type_of_countries == 'lostgen'){
-      return(HTML("<b>No Lost Generation</b><i> brings together key partners to achieve agreed outcomes essential for the education, protection, and adolescent and youth engagement of Syrian and Iraqi refugees. The initiative is led jointly by UNICEF and World Vision. Partners include UN agencies, international and national NGOs, institutional donors, private sector companies and the startup community; governments, and individuals.</i>"))
-    }
-    if(input$type_of_countries == 'aa'){
-      return(HTML("<b>IDP Action Agenda</b><i> The United Nations Secretary-General’s Action Agenda on Internal Displacement aims to 1) help IDPs find a durable solution to their displacement; 2) better prevent new displacement crises from emerging; and 3) ensure those facing displacement receive effective protection and assistance.</i>"))
-    }
   })
 }
 
