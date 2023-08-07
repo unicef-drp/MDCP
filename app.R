@@ -1,7 +1,6 @@
+library(tidyverse) # replace_na 
 library(shiny) # fluidPage wellPanel radioButtons div HTML htmlOutput conditionalPanel hr h4 selectInput reactiveVal renderUI req includeHTML observeEvent validate need updateSelectInput renderText shinyApp 
 library(leaflet) # leafletOutput renderLeaflet leaflet leafletOptions addTiles setMaxBounds setView addPolygons labelOptions highlightOptions
-library(dplyr) # filter left_join select mutate pull 
-library(tidyr) # replace_na 
 library(rworldmap) # joinCountryData2Map 
 
 ## COUNTRY LISTS ----
@@ -41,8 +40,14 @@ choices <- countries$area
 
 ## UI ----
 
-ui <- fluidPage(
-  wellPanel(radioButtons(inputId="type_of_countries", "Browse all countries or select a country group",
+# ui <- function(req){
+#   dashboardPage(
+#     ...
+#   )
+# } 
+
+ui <- function(req){
+  fluidPage(wellPanel(radioButtons(inputId="type_of_countries", "Browse all countries or select a country group",
                          choiceNames = list('All countries',
                                             div(HTML("<em>Prospects</em> countries")),  
                                             div(HTML("<em>Blueprint</em> countries")),
@@ -54,7 +59,7 @@ ui <- fluidPage(
             style = "border: 3px solid #00AEEF; opacity: 0.92;"),
   conditionalPanel(condition = "input.type_of_countries == 'world'",
                    wellPanel(tags$head(tags$style('.selectize-dropdown {z-index: 100000000 !important;}')),
-                             tags$hr(),
+                             #tags$hr(),
                              h4(style = 'font-family:Arial;','Please select a country'),
                              selectInput(inputId = "world_country", label = NULL,
                                          choices = choices,
@@ -91,12 +96,15 @@ ui <- fluidPage(
   wellPanel(htmlOutput("ctry_profile"),
             style = "border: 3px solid #00AEEF; opacity: 0.92;")
 )
+}
 
 ## SERVER ----
 server <-  function(input, output,session) {
   
-  #initial map
-  ctry <- reactiveVal('AFG')
+  #initial country value
+  ctry <- reactiveVal(value='AFG') #initial value AFG
+  
+  #initial country profile
   output$ctry_profile <- renderUI({
     req(ctry())
     includeHTML('www/profile_v6_AFG.html')

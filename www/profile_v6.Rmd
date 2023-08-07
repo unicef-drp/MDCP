@@ -27,6 +27,7 @@ knitr::opts_chunk$set(echo = FALSE,warning = F,message = F)
 ## Creating path & Load files  
 ## To change country of concern and hyperparameters here
 country <- params$data
+#country <-"MEX"
 id_of_country <- mig.stock |> filter(iso3 == country) |> pull(area.id) |> unique()
 sub_of_country <- mig.stock |> filter(iso3 == country) |> pull(subregion) |> unique()
 sub_of_country <- ifelse(is.na(sub_of_country),'Northern America',sub_of_country)
@@ -673,20 +674,20 @@ dt_mmg_ctr <- Missing_Migrants_Global_Figures_allData_withCountries |>
 
 ```{r,fig.align = "center",out.width="100%", warning=FALSE}
 if(nrow(dt_mmg_ctr) != 0){
-   fig.mmg <- ggplot(data =dt_mmg_ctr, aes(x = `Incident year`, y = pop, fill = `Cause of Death`)) + 
+  fig.mmg <- ggplot(data =dt_mmg_ctr, aes(x = `Incident year`, y = pop, fill = `Cause of Death`)) + 
     geom_bar(stat = 'identity', position = 'stack', alpha = 0.8) +
     labs(#subtitle = country.wpp.name,
-         color = NULL,
-         y = 'Deaths',x = NULL)+
+      color = NULL,
+      y = 'Deaths',x = NULL)+
     scale_fill_manual(values = unicef_colors_tri)+
-    scale_x_discrete(limits = 2014:2023)+
+    scale_x_discrete(drop=FALSE)+  #to show all years,  even those without data
     theme_minimal()+
     theme(legend.position="bottom", 
           legend.text = element_text(size=8), 
           panel.border = element_blank(),
           panel.grid=element_blank(),
           plot.title=element_text(size=14, face="bold"),
-        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))+
+          panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))+
     guides(fill=guide_legend(ncol = 1))
   fig.mmg
 }
