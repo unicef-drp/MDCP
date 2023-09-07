@@ -7,12 +7,13 @@ title: ' '
 #     toc_collapsed: true
 #     toc_depth: 3
 #     number_sections: false
+#html_fragment makes a slimmed-down version of the html. This solves the conflict of embedding an html into an html. The theme is applied in app:UI 
 output:
-  bookdown::html_document2:
-    #css: style.css
-    theme: cerulean
-    toc: false
-    number_sections: false
+ html_fragment:
+    css: columns.css
+    #theme: cerulean
+    #toc: false
+    #number_sections: false
 params:
   data: AFG
 
@@ -70,6 +71,30 @@ wpp.asfr.country <- wpp.asfr |>
            (year == 2022 & age.group == '15to19' & area.id %in% c(country.wpp.sub.id,900)))|>
   mutate(year = paste(year,area,sep = " "))
 
+##############
+#Life expectancy table
+wpp.dem.le.world <- wpp.dem |>
+  filter(area=="WORLD") |>
+  filter(year %in% 1950:2022) |> 
+  select(year, le) |> 
+  mutate(series = "World average") |> 
+  rename(value=le)
+  
+wpp.dem.le.country <- wpp.dem |>
+  filter(iso3 ==country) |>
+  filter(year %in% 1950:2022) |> 
+  select(year, le.m, le.f) |> 
+  pivot_longer(cols=c(le.m, le.f), values_to = "value", names_to = "series") 
+
+wpp.dem.le.country$series[wpp.dem.le.country$series=="le.m"] <- "Male"
+wpp.dem.le.country$series[wpp.dem.le.country$series=="le.f"] <- "Female"
+
+wpp.dem.le.country <- bind_rows(wpp.dem.le.country,wpp.dem.le.world)
+
+wpp.dem.le.country$series <- factor(wpp.dem.le.country$series,
+                                    levels = c("Female", "Male", "World average"))
+##############
+
 #Building population table to print
 pop.df <- wpp.age.group.country |>
   select(year, 'Total population (thousand)' = poptotal.thsd) |>
@@ -96,7 +121,9 @@ pop.df <- wpp.age.group.country |>
               select(year, 'Total fertility (live births per woman)' = tfr,
                      'Life expectancy at birth (years)' = le,
                      'Neonatal mortality rate (deaths per 1 000 live births)' = imr,
-                     'Under five mortality rate (deaths per 1 000 live births)' = u5mr), by = 'year') |>
+                     'Under five mortality rate (deaths per 1 000 live births)' = u5mr,
+                     'Female Life expectancy at birth (years)' = le.f,
+                     'Male Life expectancy at birth (years)' = le.m), by = 'year') |>
   left_join(wpp.asfr.country|>
               select(year,'Adolescent fertility rate (births per 1 000 women ages 15-19)' = asfr), by = 'year') |>
   left_join(wpp.dem.country |> 
@@ -397,24 +424,19 @@ names(myHeader) <- c(" ", country.wpp.name,country.wpp.sub,'World')
 
 
 ```{r}
-kable(dt_mig_2020[1:5,], align = c('l',rep('r',3))) |> 
+kable(dt_mig_2020[1:5,], align = c('l',rep('r',3))) |>
   kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |> 
-  row_spec(1:5) |>
-  add_header_above(myHeader) |> 
+  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  column_spec(2:4, width = '3cm') |>
+  #row_spec(1:5) |>
+  add_header_above(myHeader) |>
   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```
- 
- 
-<center>
+<br>
 
-<font size = 3> **Left: Trend in migrant stock, 1990-2020 (in thousands)<br>Right: Age pyramid of migrants and non-migrants, 2020<br>`r country.wpp.name`** </em></font>  
 
-</center>  
 
-#### 
-
-```{r, out.width="50%", fig.show="hold"}
+```{r, out.width="50%", fig.show="hold", fig.ncol = 2, fig.cap=c('Figure 1', 'Figure 2')}
 data2 <- mig.stock.ref |> 
   select(3,4,5,7) |> 
   filter(iso3 == country, indic %in% c('ref','ref_pct')) |> 
@@ -501,10 +523,34 @@ fig5 <- ggplot(data=data5,aes(x = age.group.label, y = pct)) +
   labs(fill = 'migrant',
        color = 'non-migrant')
 
-fig2
-fig5
+#fig2
+#fig5
 ```
 
+
+:::: {style="display: flex;"}
+
+::: {}
+
+<font size = 3> **Trend in migrant stock (in thousands)<br>`r country.wpp.name`, 1990-2020** </em></font> 
+
+```{r, out.width="90%"}
+fig2
+```
+:::
+
+::: {}
+<font size = 3> **Age pyramid of migrants and non-migrants<br>`r country.wpp.name`, 2020** </em></font> 
+
+
+```{r, out.width="90%"}
+fig5
+```
+:::
+
+::::
+  
+  
 <font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2020. International Migrant Stock 2020.</em></font>
   
 #### International migration corridors
@@ -566,8 +612,8 @@ emi.df <-  data1 |> filter(orig == country, dest %in% concerned_ctries) |>
   mutate(dest = paste0('To ',dest.area), pop = format(round(pop),big.mark = ' ',scientific = F)) |> 
   select(!!as.name(paste0('Top 3 emigration corridors from ', country.wpp.name)) := dest,
          'Migrants (thousand)' = pop) |>
-  kable(align = c('l','r'))|> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm')
+  kable(align = c('l','r'), centering = FALSE)|> kable_classic(full_width = T) |>
+  column_spec(1, bold = T, border_right = T,width = '8cm') 
 
 immi.df <-  data1 |> filter(dest == country, orig %in% concerned_ctries) |> 
   arrange(desc(pop)) |> top_n(3,pop) |> 
@@ -575,17 +621,21 @@ immi.df <-  data1 |> filter(dest == country, orig %in% concerned_ctries) |>
   select(!!as.name(paste0('Top 3 immigration corridors to ', country.wpp.name)) := dest,
          'Migrants (thousand)' = pop) |>
   kable(align = c('l','r'))|> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm')
+  column_spec(1, bold = T, border_right = T,width = '8cm')
 
 emi.df
-immi.df
-
 ```  
+<br>
+
+```{r}
+immi.df
+```
 
 <font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2021. Trends in International Migrant Stock: Migrants by Age and Sex.</em></font> 
 
-  
-The chart below shows the major migration corridors from and to `r country.wpp.name`. The light blue arrows show where emigrants from `r country.wpp.name` settled and the dark blue arrows show where immigrants in `r country.wpp.name` came from. The width of the arrow represents the number of migrants.
+<br>
+
+The chart below shows the major migration corridors from and to `r country.wpp.name`. The light blue arrows show where emigrants from `r country.wpp.name` settled and the dark blue arrows show where immigrants in `r country.wpp.name` came from. The width of the arrow represents the number of migrants. Note, in `r country.wpp.name``r dt_mig_2020[5,2][[1]]` per cent of international migrants have refugee status.
 
 <center>
 
@@ -594,7 +644,7 @@ The chart below shows the major migration corridors from and to `r country.wpp.n
 </center>  
 
 
-```{r, fig.align = "center", out.width = "150%"}
+```{r, fig.align = "center", out.width = "100%"}
 # parameters
 circos.clear()
 circos.par(start.degree = 90, canvas.ylim = c(-1.1,1.1), gap.degree = 4, track.margin = c(-0.1, 0.1), points.overflow.warning = FALSE)
@@ -658,31 +708,32 @@ circos.trackPlotRegion(
 ### Missing Migrants 
 The International Organization for Migration (IOM)’s [Missing Migrants Project](https://missingmigrants.iom.int/) (MMP) records incidents in which migrants, including refugees and asylum-seekers, have died at state borders or in the process of migrating to an international destination. It includes migrants who have died at the external borders of states, or in the process of migration towards an international destination, regardless of their legal status. The Project records only those migrants who die during their journey to a country different from their country of residence.
 
-Each incident of the MMP was assigned a country based on the location coordinates of the incident, including its location within country boundaries such as land and marine economic exclusive zones. The location coordinates pertain to where the death(s) occurred or where the body or bodies were discovered, although in some regions like the Mediterranean, the geographic coordinates are estimated due to imprecise information.
+
 
 
 ```{r,fig.align = "center",out.width="100%", warning=FALSE}
 dt_mmg_ctr <- Missing_Migrants_Global_Figures_allData_withCountries |> 
   filter(ISO_TER1 == country) |> #country iso code from coordinates
-  group_by(`Incident year`, `Cause of Death`) |>
-  summarise(pop = sum(`Number of Dead`), .groups='drop')
+  group_by(`Incident year`, `Cause of death newclass`) |>
+  summarise(pop = sum(`Number of Dead`, na.rm=TRUE), .groups='drop')
 ```
 
 `r if(nrow(dt_mmg_ctr) != 0) {"<center>  
 <font size = 3>**Missing migrant incidents by cause of death, 2014-2023**</font></center>  "} else {
 " **No mortality incidents reported for this country**"}`
 
-```{r,fig.align = "center",out.width="100%", warning=FALSE}
+```{r,fig.align = "center",out.width="70%", warning=FALSE}
 if(nrow(dt_mmg_ctr) != 0){
-  fig.mmg <- ggplot(data =dt_mmg_ctr, aes(x = `Incident year`, y = pop, fill = `Cause of Death`)) + 
+  fig.mmg <- ggplot(data =dt_mmg_ctr, aes(x = `Incident year`, y = pop, fill = `Cause of death newclass`)) + 
     geom_bar(stat = 'identity', position = 'stack', alpha = 0.8) +
-    labs(#subtitle = country.wpp.name,
+    labs(fill = "Cause of Death",
       color = NULL,
       y = 'Deaths',x = NULL)+
-    scale_fill_manual(values = unicef_colors_tri)+
+    scale_fill_manual(values = causesColors)+
     scale_x_discrete(drop=FALSE)+  #to show all years,  even those without data
     theme_minimal()+
-    theme(legend.position="bottom", 
+    theme(legend.key.height=unit(.8, "cm"),
+          legend.position="right", 
           legend.text = element_text(size=8), 
           panel.border = element_blank(),
           panel.grid=element_blank(),
@@ -691,30 +742,32 @@ if(nrow(dt_mmg_ctr) != 0){
     guides(fill=guide_legend(ncol = 1))
   fig.mmg
 }
-
 ```
 
-<font size = 1><em>***Source:*** IOM, 2023. Missing Migrants Protect, https://missingmigrants.iom.int/downloads. Accessed April 2023.
+<font size = 1><em>***Source:*** IOM, 2023. Missing Migrants Protect, https://missingmigrants.iom.int/downloads. Accessed 29/08/2023.
 
-***Note:*** 2023 numbers are preliminary. The count excludes deaths that occur in immigration detention facilities or after deportation to a migrant’s homeland, as well as deaths more loosely connected with migrants´ irregular status, such as those resulting from labour exploitation. Migrants who die or go missing after they are established in a new home are also not included in the data, so deaths in refugee camps or housing are excluded.  The deaths of internally displaced persons who die within their country of origin are also excluded. </em></font>
+***Note:*** 2023 numbers are preliminary. The count excludes deaths that occur in immigration detention facilities or after deportation to a migrant’s homeland, as well as deaths more loosely connected with migrants´ irregular status, such as those resulting from labour exploitation. Migrants who die or go missing after they are established in a new home are also not included in the data, so deaths in refugee camps or housing are excluded.  The deaths of internally displaced persons who die within their country of origin are also excluded. 
+
+***Technical note:*** Each incident of the MMP was assigned a country based on the location coordinates of the incident, including its location within country boundaries such as land and marine economic exclusive zones. The location coordinates pertain to where the death(s) occurred or where the body or bodies were discovered, although in some regions like the Mediterranean, the geographic coordinates are estimated due to imprecise information.
+</em></font>
 
 
 ### Refugees 
-**Refugees** are persons who are unable or unwilling to return to their country of origin owing to a well-founded fear of being persecuted for reasons of race, religion, nationality, membership of a particular social group, or political opinion ([1951 Refugee Convention](https://www.unhcr.org/3b66c2aa10.html)).
+**Refugees** are people who have fled war, violence, conflict or persecution and have (usually) crossed an international border to find safety in another country. Their status is defined in the [1951 Refugee Convention](https://www.unhcr.org/3b66c2aa10.html) and related protocols.
 
-Refugees are people who have fled war, violence, conflict or persecution and have crossed an international border to find safety in another country.
+The number below refer to refugees and persons in refugee-like situations, they do not include asylum seekers.
 
-The term refugee excludes asylum-seekers: persons who have left their country and are seeking protection from persecution and serious human rights violations in another country, but who haven't yet been legally recognized as refugees and are waiting to receive a decision on their asylum claim. 
 
 
 ```{r}
 kable(dt_ref, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  column_spec(1, bold = T, border_right = T,width = '10cm') |>
+  column_spec(2:4, width = '3cm') |>
   row_spec(1:9) |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```  
 
-
+<br>
 
 #### UNHCR data on education 
 
@@ -724,10 +777,12 @@ flag_UNHCR_edu <- all(!is.na(dt_ref_edu_2019$`2019`))
 ```
 
 ```{r}
-if(flag_UNHCR_edu){kable(dt_ref_edu_2019, align = c('l','r')) |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
-  row_spec(1:6) |>
-  add_header_above(myHeader[1:2]) |>   row_spec( 0, extra_css = "border-top: 1px solid white")}
+if(flag_UNHCR_edu){kable(dt_ref_edu_2019, align = c('l','r')) |> 
+    kable_classic(full_width = T) |>
+    column_spec(1, bold = T, border_right = T,width = '12cm') |>
+    column_spec(2, width = '3cm') |>
+    row_spec(1:6) |>
+    add_header_above(myHeader[1:2]) |>   row_spec( 0, extra_css = "border-top: 1px solid white")}
 ```
 
 `r if(flag_UNHCR_edu){"<center><font size = 3> **School enrollment rates of refugees and national population by education level,<+br> latest data available** </em></font> </center>   "}`
@@ -796,7 +851,8 @@ if(country.wpp.name %in% dcr.ctry.ref$country){
     rename(Indicator = name, '2014 World' = `2014 WORLD`)
   
   kable(dt10, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
-    column_spec(1, bold = T, border_right = T,width = '12cm')
+    column_spec(1, bold = T, border_right = T,width = '12cm')|>    column_spec(2:4, width = '3cm')
+
 }
 
 ```
@@ -854,6 +910,7 @@ if(country %in% c('JOR','SYR','LBN','PSE')){
   kable(dt, align = c('l','l','r','r')) |> kable_classic(full_width = T) |>
     column_spec(1, bold = T,width = '12cm') |>
     column_spec(2, border_right = T,width = '12cm') |>
+        column_spec(3:4, width = '3cm') |>
     add_header_above(Header2) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 }
 ```
@@ -872,12 +929,14 @@ The [Internal Displacement Monitoring Centre (IDMC)](https://www.internal-displa
 ```{r}
 kable(dt_idp[1:6,],  align = c('l',rep('r',3)) ) |> kable_classic(full_width = T) |>
   column_spec(1, bold = T, border_right = T,width = '12cm') |>
+      column_spec(2:4, width = '3cm') |>
   row_spec(1:6)|>
   row_spec(1, extra_latex_after = "\\arrayrulecolor{white}") |>
   add_header_above(myHeader) |>
   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```
 
+<br>
 
 ```{r}
 data.idp <- idmc.conf.dis.2022 |> filter(year == 2022, iso3 == country) |>
@@ -912,7 +971,7 @@ data.adet$hazard.cat <- factor(data.adet$hazard.cat, levels=c("Weather related",
 "}`
 
 
-```{r, fig.align = "center",out.width="100%"}
+```{r, fig.align = "center",out.width="60%"}
 #, fig.show="hold"
 if(nrow(data.idp) > 0){
   fig.idp <-  ggplot(data.idp, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=type)) +
@@ -944,18 +1003,18 @@ if(nrow(data.idp) > 0){
 ```
 
 `r if(nrow(data.idp) > 0){"
-<center><font size = 3>**Number of new IDPs from disaster events by hazard category<br>2008-2022 (in thousands)**</font></center>
+<center><font size = 3>**Disaster events by hazard category and number of induced displacements (in thousands), 2008-2022 (in thousands)**</font></center>
 "}`
 
 
-```{r, fig.align = "center",out.width="100%"}
+```{r, fig.align = "center",out.width="60%"}
 #, fig.show="hold"
 if(nrow(data.idp) > 0){
   fig.adet <-  ggplot(data = data.adet, aes(x = start.date, y = idp.dis.new, size = idp.dis.new, color = hazard.cat)) +
     geom_point() +
     scale_color_manual(name = NULL, labels = c('Geophysical','Weather related', 'Unknown'),values = unicef_colors[c(2,4,5)])+
     labs(color = NULL,
-         y = 'New persons displaced',x = NULL)+
+         y = 'Number of displacements (in 1 000)',x = NULL)+
     scale_x_date(breaks = as.Date(paste0(seq(2008,2023,2), "-01-01")),
                  labels=seq(2008,2023,2))+
     theme_minimal()+
@@ -1041,27 +1100,30 @@ fig3
 ### Remittances 
 Foreign remittance is a transfer of money from a foreign worker to their family or other individuals in their home countries. In some countries, remittances may constitute a significant portion of the nation's GDP.
 
-The World Bank provides annual estimates of remittances flows globally (and bilaterally), based on national balance of payment statistics produced by central Banks and compiled by the IMF
+The World Bank provides annual estimates of remittances flows globally (and bilaterally), based on national balance of payment statistics produced by central Banks and compiled by the IMF.
 
 ```{r}
 kable(dt_remit_2021, align = c('l',rep('r',3))) |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  column_spec(1, bold = T, border_right = T,width = '10cm') |>
+      column_spec(2:4, width = '3cm') |>
   row_spec(1:2) |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```
 
 <font size = 1><em>***Source:*** World Bank, 2022. World Bank database, https://data.worldbank.org. </em></font>
 
--------
-
-## Section 2: National Demographics and socio-economics
+<br>
 
 -------
 
-In this section, we provide an overview of the country's key demographic and socio-economic indicators. This includes data on population size and growth, age distribution, income and poverty rates, educational attainment, and other important factors that impact the well-being and quality of life of individuals and communities across the country.
+## Section 2: Demographics and Socio-economics
+
+-------
+
+This section provides an overview of the country's key demographic and socio-economic indicators. This includes data on population size and growth, age distribution, income and poverty rates, educational attainment, and other important factors that impact the well-being and quality of life of individuals and communities across the country.
 
 
-#### Population numbers
+### Population numbers
 
 ```{r}
 if(country.wpp.name == "New Zealand"){
@@ -1081,7 +1143,8 @@ myHeader <- c(" " = 1, country.wpp.name = 3)
 names(myHeader) <- c(" ", country.wpp.name)
 
 kable(dt1,align = c('l',rep('r',3)))  |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm',) |>
+  column_spec(1, bold = T, border_right = T,width = '10cm',) |>
+      column_spec(2:4, width = '2cm') |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white") |>
   footnote(symbol = 'projected')
 
@@ -1094,7 +1157,7 @@ kable(dt1,align = c('l',rep('r',3)))  |> kable_classic(full_width = T) |>
 
 </center>  
 
-```{r, message=F,warning=F,fig.align = "center"}
+```{r, message=F,warning=F,fig.align = "center",out.width="70%"}
 data_chart1 <- wpp.age.group |> filter(iso3 == country & year %in% yr_bg1:yr_ed1) |>
   select(1:3,pop0to4.thsd, pop0to17.thsd,pop17plus.thsd,pop60plus.thsd) |>
   mutate(pop5to17.thsd = pop0to17.thsd-pop0to4.thsd, pop18to59.thsd = pop17plus.thsd-pop60plus.thsd,  datatype = ifelse(year>=2022,'Projection','Estimation')) |>
@@ -1127,7 +1190,11 @@ fig_chart1
 
 <font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2019. World Population Prospects: The 2019 Revision.</em></font>
 
-#### Share of population
+### Share of population
+
+Understanding the share of population by age groups in a country is essential for effective policymaking and resource allocation. This demographic information provides insights into the country's social structure, healthcare needs, and economic dynamics. A high proportion of children might indicate a need for investment in education and child welfare programs, while a growing elderly population could signal increased demand for healthcare services and pension systems. 
+
+
 ```{r}
 dt2 <- pop.df |>
   select(1,10:13,9) |>
@@ -1142,17 +1209,15 @@ myHeader <- c(" " = 1, country.wpp.name = 3,country.wpp.sub = 1,'World' = 1)
 names(myHeader) <- c(" ", country.wpp.name,country.wpp.sub,'World')
 
 kable(dt2)  |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  column_spec(1, bold = T, border_right = T,width = '10cm') |>
+      column_spec(2:4, width = '1.5cm') |>
+      column_spec(5:6, width = '3cm') |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")|>
   footnote(symbol = 'projected')
 
 ```
 
-<center>
 
-<font size = 3> **Left: Share of population by age group, `r yr_bg1`-`r yr_ed1`<br>Right: Age Pyramid, 2022 and 2050<br>`r country.wpp.name`** </em></font>  
-
-</center> 
 
 ```{r, message=F,warning=F,out.width="50%"}
 data_chart2 <- wpp.age.group.pct |> filter(iso3 == country & year %in% yr_bg1:yr_ed1) |>
@@ -1233,20 +1298,41 @@ fig_chart3 <- ggplot(data=data_chart3,aes(x= age.group, y = pct)) +
   guides(fill  = guide_legend(order = 1),
          color = guide_legend(order = 2))
 
-#grid.arrange(fig_chart1, fig_chart2, ncol=2)
+```
+
+:::: {style="display: flex;"}
+
+::: {}
+
+<font size = 3> **Share of population by age group<br>`r country.wpp.name`, `r yr_bg1`-`r yr_ed1`** </em></font> 
+
+```{r, out.width="90%"}
 fig_chart2
+```
+:::
+
+::: {}
+<font size = 3> **Age Pyramid<br>`r country.wpp.name`, 2022 and 2050** </em></font> 
+
+
+```{r, out.width="90%"}
 fig_chart3
 ```
+:::
+
+::::
+
 
 <font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2019. World Population Prospects: The 2019 Revision.</em></font>
 
-#### Demographics
+### Fertility
 
-Demographic data of a country are essential for planning and resource allocation, economic development, tracking health outcomes and social progress.
+Knowing the fertility rates of a country is crucial for understanding its demographic dynamics and planning effective policies. Fertility rates provide insights into population growth, age distribution, and the potential future workforce. High fertility rates can strain resources and services, while low rates can lead to an aging population and potential labor shortages.
+
 
 ```{r}
 dt3 <- pop.df |>
-  select(1,14,18,19,15) |>
+  select(1,14,20,21) |>
   pivot_longer(-year) |>
   pivot_wider(names_from=year, values_from=value) |>
   select(name, ends_with(country.wpp.name),ends_with(country.wpp.sub),everything()) |>
@@ -1260,17 +1346,13 @@ names(myHeader) <- c(" ", country.wpp.name,country.wpp.sub,'World')
 
 
 kable(dt3,align = c('l',rep('r',5)))  |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  column_spec(1, bold = T, border_right = T,width = '10cm') |>
+      column_spec(2:4, width = '1.5cm') |>
+      column_spec(5:6, width = '3cm') |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")|>
   footnote(symbol = c('projected'))
 
 ```
-
-<center>
-
-<font size = 3> **Left: Total fertility rate<br>Right: Number of births<br>`r country.wpp.name`, 1950-2050** </em></font>  
-
-</center> 
 
 ```{r, message=F,warning=F,out.width="50%"}
 yr_bg2 <- 1950
@@ -1284,7 +1366,7 @@ fig_chart4 <- ggplot(data_chart4, aes(x = year,y = tfr))+
   geom_vline(xintercept = 2022, linetype="dashed",
              color = unicef_colors[10], size=1)+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
-  labs(title='Total fertility rate',
+  labs(#title='Total fertility rate',
        #subtitle= paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
        y = 'Live births per woman',
        x = 'Year',
@@ -1304,7 +1386,7 @@ fig_chart5 <- ggplot(data_chart5, aes(x = year,y = births.thsd))+
   geom_vline(xintercept = 2022, linetype="dashed",
                 color = unicef_colors[10], size=1)+
   scale_x_continuous(breaks = c(1950 ,1975 ,2000 ,2022, 2050),labels = c('1950' ,'1975' ,'2000' ,'2022', '2050'))+
-  labs(title='Number of births',
+  labs(#title='Number of births',
        #subtitle= paste0(name_of_country, ", ", yr_bg2,"-",yr_ed2),
        y = 'Births (thousand)',
        x = 'Year',
@@ -1316,16 +1398,97 @@ fig_chart5 <- ggplot(data_chart5, aes(x = year,y = births.thsd))+
         legend.direction="vertical",
         plot.title=element_text(size=14, face="bold"),
         panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
+```
 
+
+:::: {style="display: flex;"}
+
+::: {}
+
+<font size = 3> **Total fertility rate<br>`r country.wpp.name`, 1950-2050** </em></font> 
+
+```{r, out.width="90%"}
 fig_chart4
+```
+:::
+
+::: {}
+<font size = 3> **Number of births<br>`r country.wpp.name`, 1950-2050** </em></font> 
+
+
+```{r, out.width="90%"}
 fig_chart5
+```
+:::
+
+::::
+
+
+
+<font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2022. 2022 Revision of World Population Prospects.</em></font>
+
+### Life expectancy
+
+
+Understanding the life expectancy in a country is crucial for assessing the overall health and well-being of its population. It provides insights into the effectiveness of healthcare systems, quality of living conditions, and access to essential services. Disparities between genders can reveal underlying societal and cultural factors that may influence health outcomes. 
+
+```{r}
+dt4<- pop.df |>
+  select(1,15, 18,19) |>
+  pivot_longer(-year) |>
+  pivot_wider(names_from=year, values_from=value) |>
+  select(name, ends_with(country.wpp.name),ends_with(country.wpp.sub),everything())
+
+dt4[,2:6] <- round(dt4[,2:6], digits = 1)
+
+colnames(dt4) <- c('Indicator', '2000' ,'2022' , '2050*' , '2022', '2022')
+
+# create vector with colspan
+myHeader <- c(" " = 1, country.wpp.name = 3,country.wpp.sub = 1,'World' = 1)
+names(myHeader) <- c(" ", country.wpp.name,country.wpp.sub,'World')
+
+
+kable(dt4,align = c('l',rep('r',5)))  |> 
+  kable_classic(full_width = T) |>
+  column_spec(1, bold = T, border_right = T,width = '10cm') |>
+      column_spec(2:4, width = '1.5cm') |>
+      column_spec(5:6, width = '3cm') |>
+  add_header_above(myHeader) |>   
+  row_spec( 0, extra_css = "border-top: 1px solid white")|>
+  footnote(symbol = c('projected'))
+
+```
+<br>
+
+<center>
+
+<font size = 3> **Female and Male life expectancy at birth<br>`r country.wpp.name`, 1950-2022** </em></font>  
+
+</center> 
+```{r, fig.align = "center",out.width="70%"}
+if(!nrow(wpp.dem.le.country) == 0){
+g <- ggplot(wpp.dem.le.country, aes(x=year, y = value, color=series)) +
+  geom_line(size = 0.8) +
+  #geom_point(size =2)+
+  scale_color_manual(values = c(unicef_colors[1], unicef_colors[2], unicef_colors[9]))+
+  blank_theme+
+  labs(y = 'Life expectancy (years)')+
+  ylim(0,NA)+  #always showing minimum zero
+  theme(legend.title=element_blank(),
+        plot.title = element_text(face = 'bold'),
+        panel.grid.major.x = element_line(color=unicef_colors[9], linetype = "dashed"),
+        panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
+g
+}
 ```
 
 <font size = 1><em>***Source:*** United Nations, Department of Economic and Social Affairs, Population Division, 2022. 2022 Revision of World Population Prospects.</em></font>
 
-### Child mortality indicators
 
-Calculating child mortality indicators is important to monitor progress towards SDGs, identify areas in need and evaluating the effectiveness of interventions. These are also  key components to improve health outcomes for children in a country.
+### Child mortality
+
+
+Child mortality rates are important indicators of a country's overall health and development. They provide a clear picture of the quality of healthcare, nutrition, sanitation, and living conditions for children. Monitoring child mortality rates helps identify regions or communities facing higher risks, enabling targeted interventions to reduce infant and child deaths. 
 
 
 ```{r}
@@ -1364,15 +1527,22 @@ if(nrow(dt.igme) == 0){
 }else{
   flag_igme <- T
   kable(dt.igme,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
-  add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
+    column_spec(1, bold = T, border_right = T,width = '12cm') |>
+    column_spec(2:3, width = '2.5cm') |>
+    add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 }
 
 ```
+
+<br>
+
 `r if(flag_igme){"<center> <font size = 3> **Child mortality**</font></center> "}`
 
-```{r,fig.align = "center"}
+```{r,fig.align = "center",out.width="70%"}
 if(!nrow(dt.igme) == 0){
+  
+  igme$Indicator <- factor(igme$Indicator,
+                           levels=c("Neonatal mortality rate", "Infant mortality rate", "Under-five mortality rate", "Mortality rate age 10-19"))
 fig_igme <- ggplot(igme |> filter(Year %in% seq(1990,latest_year_igme), ISO.Code == country), aes(x = Year, y = Median, color = Indicator,shape = Indicator)) +
   geom_line(size = 0.8, linetype = "dashed") +
   geom_point(size =2)+
@@ -1380,7 +1550,8 @@ fig_igme <- ggplot(igme |> filter(Year %in% seq(1990,latest_year_igme), ISO.Code
   blank_theme+
   labs(y = 'Deaths per 1 000 total births')+
   ylim(0,NA)+  #always showing minimum zero
-  theme(plot.title = element_text(face = 'bold'),
+  theme(legend.title=element_blank(),
+        plot.title = element_text(face = 'bold'),
         panel.grid.major.x = element_line(color=unicef_colors[9], linetype = "dashed"),
         panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
@@ -1393,8 +1564,8 @@ fig_igme
 `r if(!flag_igme){"<font size = 1><em>***Note:*** Currently no data for this indicator for this country. </em></font>"}`
 
 
-### Child protection indicators
-Children on the move lacking a birth certificate or identity documentation may be denied access to education or health services, are at risk being treated as an adult, and face an increased risk of family separation and ofobstacles to durable solutions such as integration or relocation. Lacking a birth certificate can also be an obstacle to proving nationalitycitizenship and being considered in the country's vital statistics. 
+### Child protection
+Children lacking a birth certificate or identity documentation may be denied access to education or health services, are at risk being treated as an adult, and face an increased risk of family separation and ofobstacles to durable solutions such as integration or relocation. Lacking a birth certificate can also be an obstacle to proving nationalitycitizenship and being considered in the country's vital statistics. 
 
 ```{r}
 cp.df <- cp.br.under5 |> 
@@ -1440,7 +1611,7 @@ fig_chart9
 
 <font size = 1><em>***Source:*** UNICEF, 2022. Data Warehouse, https://data.unicef.org/.</em></font>
 
-### Education indicators
+### Education
 
 National education indicators are statistics that measure the status and progress of a country's education system. These indicators provide information on the access to and quality of education, as well as the outcomes of education.
 
@@ -1458,11 +1629,12 @@ myHeader <- c(" " = 1, country.wpp.name = 1)
 names(myHeader) <- c(" ", country.wpp.name)
 
 kable(dt6,align = c('l','r'))  |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  column_spec(1, bold = T, border_right = T,width = '3cm') |>
+  column_spec(2, width = '2cm') |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 
 ```
-
+<br>
 ```{r}
 
 edu2.df <- data.frame('Education by level' = c('Completion rate  (%)','Net enrolment rate  (%)','Out-of-school rate  (%)','Pupil-trained teacher ratio' ),
@@ -1488,13 +1660,16 @@ names(myHeader) <- c(" ", paste0(name_of_country,", latest year"))
 
 
 kable(dt7, align = c('l','r','r','r'))  |> kable_classic(full_width = T) |>
-  column_spec(1, bold = T, border_right = T,width = '12cm') |>
+  column_spec(1, bold = T, border_right = T,width = '7cm') |>
+      column_spec(2:4, width = '4cm') |>
   add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 ```
 
 <font size = 1><em>***Source:*** UNESCO, Institute for Statistics, 2022. UIS database, http://data.uis.unesco.org.</em></font>
 
-### Labour indicators
+### Labour
+
+Knowing the unemployment rates in a country, both for adults and youth, is crucial for assessing the overall health of its economy and the well-being of its citizens. High unemployment rates can indicate economic instability, inequality, and potential social tensions. Unemployment among youth is particularly significant as it affects their transition into the workforce, potentially leading to long-term negative effects on their career prospects and financial stability. 
 
 ```{r}
 ilo.df.blank <- tibble(Indicator =c("Adult (25+) unemployment rate (%)", 
@@ -1513,7 +1688,7 @@ ilo.unemploy.wpp1 <- ilo.unempl.pct.est |>
 v1 <- ilo.unemploy.wpp1 |> filter(time==2000) |> select(obs_value) |> pull()
 v2 <- ilo.unemploy.wpp1 |> arrange(time) |> select(obs_value) |> last() |> pull()
 v2_time <- ilo.unemploy.wpp1 |> arrange(time) |> select(time) |> last() |> pull()
-ilo.df.blank$`2000`[1] <- ifelse(length(v1)==1,paste0(round(v1,1), " (2000)"),NA)
+ilo.df.blank$`2000`[1] <- ifelse(length(v1)==1,round(v1,1),NA)
 ilo.df.blank$Latest[1] <- ifelse(length(v2)==1,paste0(round(v2,1), " (",v2_time, ")"),NA)
 
 #Youth (15-24) unemployment rate (%)
@@ -1523,7 +1698,7 @@ ilo.unemploy.wpp2 <- ilo.unempl.pct.est |>
 v1 <- ilo.unemploy.wpp2 |> filter(time==2000) |> select(obs_value) |> pull()
 v2 <- ilo.unemploy.wpp2 |> arrange(time) |> select(obs_value) |> last() |> pull()
 v2_time <- ilo.unemploy.wpp2 |> arrange(time) |> select(time) |> last() |> pull()
-ilo.df.blank$`2000`[2] <- ifelse(length(v1)==1,paste0(round(v1,1), " (2000)"),NA)
+ilo.df.blank$`2000`[2] <- ifelse(length(v1)==1,round(v1,1),NA)
 ilo.df.blank$Latest[2] <- ifelse(length(v2)==1,paste0(round(v2,1), " (",v2_time, ")"),NA)
 
 #Share of youth (15-24) not in employment, education or training (NEET) (%)
@@ -1533,7 +1708,7 @@ ilo.neet.wpp <- ilo.neet.pct.est |>
 v1 <- ilo.neet.wpp |> filter(time==2000) |> select(obs_value) |> pull()
 v2 <- ilo.neet.wpp |> arrange(time) |> select(obs_value) |> last() |> pull()
 v2_time <- ilo.neet.wpp |> arrange(time) |> select(time) |> last() |> pull()
-ilo.df.blank$`2000`[3] <- ifelse(length(v1)==1,paste0(round(v1,1), " (2000)"),NA)
+ilo.df.blank$`2000`[3] <- ifelse(length(v1)==1,round(v1,1),NA)
 ilo.df.blank$Latest[3] <- ifelse(length(v2)==1,paste0(round(v2,1), " (",v2_time, ")"),NA)
 
 #Proportion of children engaged in economic activity (%)
@@ -1543,7 +1718,7 @@ ilo.chldlbr.wpp <- ilo.chldlbr |>
 v1 <- ilo.chldlbr.wpp |> filter(time==2000) |> select(obs_value) |> pull()
 v2 <- ilo.chldlbr.wpp |> arrange(time) |> select(obs_value) |> last() |> pull()
 v2_time <- ilo.chldlbr.wpp |> arrange(time) |> select(time) |> last() |> pull()
-ilo.df.blank$`2000`[4] <- ifelse(length(v1)==1,paste0(round(v1,1), " (2000"),NA)
+ilo.df.blank$`2000`[4] <- ifelse(length(v1)==1,round(v1,1),NA)
 ilo.df.blank$Latest[4] <- ifelse(is.na(v2),NA,paste0(round(v2,1), " (",v2_time, ")"))
 
 #Working poverty rate (percentage of employed living below US$1.90 PPP)
@@ -1566,14 +1741,18 @@ if(all(ilo.df.blank$Latest %in% c(NA, "NA (NA)"))){ #if there aren't any Labour 
   flag_ilo <-  T
   kable(ilo.df.blank,align = c('l','r','r'))  |> kable_classic(full_width = T) |>
     column_spec(1, bold = T, border_right = T,width = '12cm') |>
+      column_spec(2:3, width = '4m') |>
     add_header_above(myHeader) |>   row_spec( 0, extra_css = "border-top: 1px solid white")
 }
 
 ```
+<br>
 
 **Youth unemployment rate** refers to the percentage of unemployed individuals in the age group of 15 to 24 years within the total labor force of the same age group in a particular country or region. This indicator is used to measure the degree to which young people are able to find employment opportunities and participate in the workforce. High youth unemployment rates can have negative social and economic consequences, such as reduced economic growth, increased poverty, and social unrest.
 
-***Note:*** The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data (ILO).
+<font size = 1><em>***Note:*** The unprecedented labour market shock created by the COVID-19 pandemic is difficult to assess by benchmarking against historical data (ILO). </em></font>
+
+
 
 
 ```{r,fig.align = "center"}
@@ -1709,30 +1888,51 @@ fig_chart7 <- ggplot(data_chart78 |> filter(indicator_id == "NY.GDP.MKTP.KD.ZG")
   geom_hline(yintercept = 0, color = unicef_colors[11])+
   labs(y = 'Per cent (%)',
        x = 'Year',
-       title = "GDP growth (annual %)",
+       #title = "GDP growth (annual %)",
        #subtitle = paste0(name_of_country, ", ", yr_bg4,"-",yr_ed4),
        fill = NULL)+
   blank_theme+
-  theme(legend.position="bottom",legend.direction="vertical",plot.title=element_text(size=14, face="bold"),
+  theme(legend.position="bottom",legend.direction="vertical",
         panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
 fig_chart8 <- ggplot(data_chart78 |> filter(indicator_id == 'NY.GNP.PCAP.CD'), aes(x = as.integer(date),y = value))+
   geom_bar( stat = 'identity', fill = unicef_colors_bin[1])+
   labs(y = 'US$',
        x = 'Year',
-       title = "GNI per capita, Atlas method (current US$))",
+       #title = "GNI per capita, Atlas method (current US$))",
        #subtitle = paste0(name_of_country, ", ", yr_bg5,"-",yr_ed5),
        fill = NULL)+
   scale_x_continuous(breaks= pretty_breaks()) + 
   blank_theme+
   theme(legend.position="bottom",legend.direction="vertical",
-        plot.title=element_text(size=14, face="bold"),
         panel.grid.major.y = element_line(color=unicef_colors[9], linetype = "dashed"))
 
-print(fig_chart7)
-print(fig_chart8)
+#print(fig_chart7)
+#print(fig_chart8)
 }
 ```
+
+:::: {style="display: flex;"}
+
+::: {}
+
+`r if(flag_wb){"<font size = 3>**GDP growth (annual %)**</font>"}`
+
+```{r, out.width="90%"}
+if(flag_wb){print(fig_chart7)}
+```
+:::
+
+::: {}
+`r if(flag_wb){"<font size = 3>**GNI per capita, Atlas method (current US$)**</font>"}`
+
+```{r, out.width="90%"}
+if(flag_wb){print(fig_chart8)}
+```
+:::
+
+::::
+
 
 `r if(flag_wb){"<font size = 1><em>***Source:*** World Bank, 2022. World Bank database, https://data.worldbank.org. </em></font>"}`
 

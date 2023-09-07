@@ -11,6 +11,7 @@ library(tibble)
 library(tidyr)
 library(ggplot2)
 library(ggrepel)
+library(knitr)
 library(scales)
 
 library(Rilostat) # get_ilostat_toc get_ilostat
@@ -62,9 +63,7 @@ load(file.path(input.uis,'uis.Rdata')) # still bulk download
 
 ##### UNHCR, UNRWA Refugee data #####
 
-UNRWA2022_Q4 <- read_csv(paste0(path.basic, "/Data/UNRWA/UNRWA2022/UNRWA2022_Q4.csv"))
-Missing_Migrants_Global_Figures_allData_withCountries <- read_csv(paste0(path.basic, "/Data/MMP/source_data/Missing_Migrants_Global_Figures_allData_withCountries.csv"))
-Missing_Migrants_Global_Figures_allData_withCountries$`Incident year` <- factor(Missing_Migrants_Global_Figures_allData_withCountries$`Incident year`, levels=c(2014:2023)) #to factors to improve graph
+UNRWA2022_Q4 <- read_csv(paste0(path.basic, "/Data/UNRWA/UNRWA2022_Q4.csv"))
 
 ##### UNHCR Connectivity data #####
 dcr.df <- rbind(tibble(V1 = c( "Armenia", "Azerbaijan", "Bosnia and Herzegovina", "Croatia", "France",  
@@ -102,6 +101,43 @@ dcr.ctry.ref <- tibble(country = dcr.df[1:86,1] |> pull(),
   mutate(unhcr.subregion = ifelse(country %in% c("Armenia", "Azerbaijan", "Bosnia and Herzegovina", "Croatia", "France",  "Germany","Hungary","Luxembourg","Montenegro","Romania", "Russian Federation","Switzerland","Tajikistan","Turkey","Ukraine",'Czechia','Serbia','North Macedonia'),'Europe & Central Asia',unhcr.subregion)) |>
   mutate(unhcr.subregion = ifelse(country == 'Canada','North America',unhcr.subregion))
 
+##### MMP data #####
+
+Missing_Migrants_Global_Figures_allData_withCountries <- read_csv(paste0(path.basic, "/Data/MMP/source_data/Missing_Migrants_Global_Figures_allData_withCountries_2.csv"))
+Missing_Migrants_Global_Figures_allData_withCountries$`Incident year` <- factor(Missing_Migrants_Global_Figures_allData_withCountries$`Incident year`, levels=c(2014:2023)) #to factors to improve graph
+
+
+#table to reclassify the causes of death to have less categories appropriate for visualization
+
+cause_reclassify <- tribble(~`Cause of Death`, ~`Cause of death newclass`,
+                            "Mixed or unknown","Mixed or unknown",
+                            "Violence","Violence",
+                            "Harsh environmental conditions / lack of adequate shelter, food, water","Harsh environmental conditions /\nlack of adequate shelter, food, water",
+                            "Drowning","Drowning",
+                            "Vehicle accident / death linked to hazardous transport","Vehicle accident /\ndeath linked to hazardous transport",
+                            "Sickness / lack of access to adequate healthcare","Sickness / lack of access\nto adequate healthcare",
+                            "Accidental death","Accidental death",
+                            "Drowning,Mixed or unknown","Mixed or unknown",
+                            "Drowning,Harsh environmental conditions / lack of adequate shelter, food, water","Mixed or unknown",
+                            "Drowning,Vehicle accident / death linked to hazardous transport","Mixed or unknown",
+                            "Harsh environmental conditions / lack of adequate shelter, food, water,Sickness / lack of access to adequate healthcare","Mixed or unknown",
+                            "Harsh environmental conditions / lack of adequate shelter, food, water,Mixed or unknown","Mixed or unknown",
+                            "Drowning,Violence" ,"Mixed or unknown",
+                            "Mixed or unknown,Vehicle accident / death linked to hazardous transport,Violence" ,"Mixed or unknown",
+                            "Drowning,Sickness / lack of access to adequate healthcare" ,"Mixed or unknown")  
+
+Missing_Migrants_Global_Figures_allData_withCountries <- Missing_Migrants_Global_Figures_allData_withCountries |> left_join(cause_reclassify,by="Cause of Death")
+Missing_Migrants_Global_Figures_allData_withCountries$`Cause of death newclass` <- factor(Missing_Migrants_Global_Figures_allData_withCountries$`Cause of death newclass`,
+                                                                                         levels = c("Mixed or unknown",
+                                                                                                    "Harsh environmental conditions /\nlack of adequate shelter, food, water",
+                                                                                                    "Sickness / lack of access\nto adequate healthcare",
+                                                                                                    "Drowning",
+                                                                                                    "Vehicle accident /\ndeath linked to hazardous transport",
+                                                                                                    "Accidental death",
+                                                                                                    "Violence"))
+
+causesColors <-  setNames( c("#D8D1C9", "#ffd456","#ffc20e", "#00833D", "#80BD41", "#1CABE2", "#2D2926"),
+                           levels(Missing_Migrants_Global_Figures_allData_withCountries$`Cause of death newclass`)  )
 
 ##### Education data #####
 ##UIS data Gross Enrollment rate downloaded here: http://data.uis.unesco.org/
@@ -222,6 +258,7 @@ unicef_colors_tri <- c("#14789e", "#1CABE2", "#60c4eb",
                        "#b3880a", "#ffc20e", "#ffd456",
                        "#535355", "#777779", "#a0a0a1")
 
+
 #bin UNICEF cyan - UNICEF cyan (20%)
 unicef_colors_bin <- c("#1CABE2", "#d2eef9")
 
@@ -248,9 +285,11 @@ render_profile <- function(country) {
   out <- tryCatch(
     {
       rmarkdown::render(
-        "www/profile_v6.Rmd", params = list(
-          data = country
-        ),
+        "www/profile_v6.Rmd",
+        html_fragment(df_print = "kable", 
+                      toc = FALSE,
+                      number_sections = FALSE),
+        params = list(data = country),
         output_file = paste0("profile_v6_", country, ".html")
       )
       
@@ -269,22 +308,14 @@ render_profile <- function(country) {
   return(out)
 }
 
-prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
-
-# 
-# ctry_list <- c( "AIA", "AND", "CRI", "DMA", "ETH",
-#                 "GAB", "IRQ", "JOR",
-#                 "KEN", "KNA", "LBN", "LIE", "MCO", "PAK",
-#                 "REU", "RWA",
-#                 "SHN", "SMR", "TCD", "UGA")
-
+#prospect_country <- c( "UGA","KEN", "SDN", "ETH","EGY","JOR", "IRQ", "LBN")
 
 #list of countries to generate reports
 #all countries
 ctry_list <- all_ctry
 
-#selected countries
-#ctry_list <- c("AFG")
+#selected countrie
+ctry_list <- c("ITA")
 
 for(i in ctry_list){
   render_profile(i)
