@@ -85,10 +85,10 @@ ui <- function(req) {
         "Browse all countries or select a country group",
         choiceNames = list(
           'All countries',
-          div(HTML("<em>Prospects</em> countries")),
-          div(HTML("<em>Blueprint</em> countries")),
-          div(HTML("<em>No Lost Generation</em>")),
-          div(HTML("<em>IDP Action Agenda</em>"))
+          div(HTML("Prospects countries")),
+          div(HTML("Blueprint countries")),
+          div(HTML("No Lost Generation")),
+          div(HTML("IDP Action Agenda"))
         ),
         choiceValues = c('world', 'prospects', 'blueprint', 'lostgen', 'aa'),
         selected = 'world',
@@ -102,25 +102,25 @@ ui <- function(req) {
       "input.type_of_countries == 'world'",
       "", 
       "mymap1"
-    ),
+    ),#
     generate_conditional_panel(
       "input.type_of_countries == 'prospects'",
-      "<i>The </i><b>PROSPECTS</b><i> Partnership is a programme funded by the Dutch Government focusing on improving responses to forced displacement crises for the benefit of forcibly displaced populations and host communities. The programme was launched in 2019 and it brings together the International Finance Corporation (IFC), International Labour Organization (ILO), United Nations High Commissioner for Refugees (UNHCR), United Nations Children's Fund (UNICEF), and the World Bank (WB) to find innovative solutions to this growing challenge around the world.</i>", 
+      "<i>The <b><a href='https://www.unicef.org/sudan/press-releases/new-partnership-prospects-changes-ways-supporting-displaced-groups-and-their-host'>PROSPECTS Partnership</a> </b> is a programme  funded by the Dutch Government focusing on improving responses to forced displacement crises for the benefit of forcibly displaced populations and host communities. The programme was launched in 2019 and it brings together the International Finance Corporation (IFC), International Labour Organization (ILO), United Nations High Commissioner for Refugees (UNHCR), United Nations Children's Fund (UNICEF), and the World Bank (WB) to find innovative solutions to this growing challenge around the world.</i>", 
       "mymap2"
     ),
     generate_conditional_panel(
       "input.type_of_countries == 'blueprint'",
-      "<i>In 2020, UNHCR and UNICEF agreed on an ambitious two-year </i><b>Blueprint for Joint Action</b>. <i>The</i> Blueprint <i>represents a commitment to accelerate joint efforts in a transformational agenda, to promote and protect the rights of refugee children and the communities that host them, and to support their inclusion and access to services. In this, it will help us deliver on the pledges we made at the Global Refugee Forum in December 2019, in support of the Global Compact on Refugees.</i>", 
+      "<i>In 2020, UNHCR and UNICEF agreed on an ambitious two-year </i><b><a href='https://www.unicef.org/emergencies/unhcr-unicef-blueprint'>Blueprint for Joint Action</a></b>. <i>The</i> Blueprint <i>represents a commitment to accelerate joint efforts in a transformational agenda, to promote and protect the rights of refugee children and the communities that host them, and to support their inclusion and access to services. In this, it will help us deliver on the pledges we made at the Global Refugee Forum in December 2019, in support of the Global Compact on Refugees.</i>", 
       "mymap3"
     ),
     generate_conditional_panel(
       "input.type_of_countries == 'lostgen'",
-      "<b>No Lost Generation</b><i> brings together key partners to achieve agreed outcomes essential for the education, protection, and adolescent and youth engagement of Syrian and Iraqi refugees. The initiative is led jointly by UNICEF and World Vision. Partners include UN agencies, international and national NGOs, institutional donors, private sector companies and the startup community; governments, and individuals.</i>", 
+      "<b><a href='https://www.nolostgeneration.org/'>No Lost Generation</a></b><i> brings together key partners to achieve agreed outcomes essential for the education, protection, and adolescent and youth engagement of Syrian and Iraqi refugees. The initiative is led jointly by UNICEF and World Vision. Partners include UN agencies, international and national NGOs, institutional donors, private sector companies and the startup community; governments, and individuals.</i>", 
       "mymap4"
     ),
     generate_conditional_panel(
       "input.type_of_countries == 'aa'",
-      "<b>IDP Action Agenda</b><i> The United Nations Secretary-General’s Action Agenda on Internal Displacement aims to 1) help IDPs find a durable solution to their displacement; 2) better prevent new displacement crises from emerging; and 3) ensure those facing displacement receive effective protection and assistance.</i>", 
+      "<b><a href='https://www.un.org/en/content/action-agenda-on-internal-displacement/'>IDP Action Agenda</a></b><i> The United Nations Secretary-General’s Action Agenda on Internal Displacement aims to 1) help IDPs find a durable solution to their displacement; 2) better prevent new displacement crises from emerging; and 3) ensure those facing displacement receive effective protection and assistance.</i>", 
       "mymap5"
     ),
     

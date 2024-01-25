@@ -1,0 +1,13 @@
+name: MDCP
+title: MDCP
+username: unicef-dapm
+account: unicef-dapm
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9513160
+bundleId: 7671400
+url: https://unicef-dapm.shinyapps.io/MDCP/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: data/data - Shortcut.lnk

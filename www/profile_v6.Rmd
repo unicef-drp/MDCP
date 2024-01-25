@@ -635,7 +635,7 @@ immi.df
 
 <br>
 
-The chart below shows the major migration corridors from and to `r country.wpp.name`. The light blue arrows show where emigrants from `r country.wpp.name` settled and the dark blue arrows show where immigrants in `r country.wpp.name` came from. The width of the arrow represents the number of migrants. Note, in `r country.wpp.name``r dt_mig_2020[5,2][[1]]` per cent of international migrants have refugee status.
+The chart below shows the major migration corridors from and to `r country.wpp.name`. The dark blue arrows show where emigrants from `r country.wpp.name` settled and the light blue arrows show where immigrants in `r country.wpp.name` came from. The width of the arrow represents the number of migrants. Note, in `r country.wpp.name``r dt_mig_2020[5,2][[1]]` per cent of international migrants have refugee status.
 
 <center>
 

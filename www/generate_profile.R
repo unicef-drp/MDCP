@@ -315,7 +315,7 @@ render_profile <- function(country) {
 ctry_list <- all_ctry
 
 #selected countrie
-ctry_list <- c("ITA")
+#ctry_list <- c("ITA")
 
 for(i in ctry_list){
   render_profile(i)
